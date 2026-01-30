@@ -1,0 +1,69 @@
+cabal-version: 2.2
+
+name:           HShell
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/t-sasaki915/HShell#readme>
+homepage:       https://github.com/t-sasaki915/HShell#readme
+bug-reports:    https://github.com/t-sasaki915/HShell/issues
+author:         Toma Sasaki
+maintainer:     netst915@gmail.com
+copyright:      2026 Toma Sasaki
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/t-sasaki915/HShell
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_HShell
+  autogen-modules:
+      Paths_HShell
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , Win32 >=2.14 && <2.15
+  default-language: Haskell2010
+  default-extensions: LambdaCase, OverloadedStrings, QuasiQuotes
+
+executable HShell
+  main-is: Main.hs
+  other-modules:
+      Paths_HShell
+  autogen-modules:
+      Paths_HShell
+  hs-source-dirs:
+      app
+  ghc-options: -optl-mwindows -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HShell
+    , base >=4.7 && <5
+    , Win32 >=2.14 && <2.15
+    , text >=2.1 && <2.2
+    , process >=1.6 && <1.7
+  default-language: Haskell2010
+  default-extensions: OverloadedStrings, LambdaCase, QuasiQuotes
+
+test-suite HShell-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_HShell
+  autogen-modules:
+      Paths_HShell
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HShell
+    , base >=4.7 && <5
+  default-language: Haskell2010
+  default-extensions: LambdaCase, OverloadedStrings, QuasiQuotes
