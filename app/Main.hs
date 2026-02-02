@@ -6,9 +6,6 @@ module Main (main) where
 
 import           Control.Exception          (SomeException, try)
 import           Control.Monad              (forM_, void, when)
-import           Control.Monad.Reader       (MonadIO (liftIO),
-                                             MonadReader (ask),
-                                             ReaderT (runReaderT))
 import           Control.Monad.Writer.Lazy  (MonadWriter (tell), Writer,
                                              runWriter)
 import           Data.Bits                  ((.|.))
@@ -37,6 +34,7 @@ class IsWin32WindowProperty a where
 instance IsWin32WindowProperty Win32WindowProperty where
     applyProperty (Win32WindowProperty a) = applyProperty a
 
+newtype Win32WindowTitle    = Win32WindowTitle Text
 newtype Win32WindowIcon     = Win32WindowIcon Win32Icon
 newtype Win32WindowCursor   = Win32WindowCursor Win32Cursor
 newtype Win32WindowSize     = Win32WindowSize (Int, Int)
@@ -44,12 +42,17 @@ newtype Win32WindowPosition = Win32WindowPosition (Int, Int)
 newtype Win32WindowBrush    = Win32WindowBrush HBRUSH
 newtype Win32WindowChildren = Win32WindowChildren [Win32GUIComponent]
 
+instance IsWin32GUIComponentProperty Win32WindowTitle
 instance IsWin32GUIComponentProperty Win32WindowIcon
 instance IsWin32GUIComponentProperty Win32WindowCursor
 instance IsWin32GUIComponentProperty Win32WindowSize
 instance IsWin32GUIComponentProperty Win32WindowPosition
 instance IsWin32GUIComponentProperty Win32WindowBrush
 instance IsWin32GUIComponentProperty Win32WindowChildren
+
+instance IsWin32WindowProperty Win32WindowTitle where
+    applyProperty (Win32WindowTitle title) windowHWND =
+        setWindowText windowHWND (Text.unpack title)
 
 instance IsWin32WindowProperty Win32WindowIcon where
     applyProperty (Win32WindowIcon icon) windowHWND =
@@ -74,19 +77,19 @@ instance IsWin32WindowProperty Win32WindowBrush where
         void $ c_SetClassLongPtr windowHWND (-10) brush
 
 instance IsWin32WindowProperty Win32WindowChildren where
-    applyProperty (Win32WindowChildren children) windowHWND =
+    applyProperty (Win32WindowChildren children) window =
         forM_ children $ \(Win32GUIComponent child) ->
-            runReaderT (render child) (Just windowHWND)
+            render child (Just window)
 
 data Win32WindowStyle = Win32WindowStylePopup
                       | Win32WindowStyleOverlapped
-                      | Win32WindowStyleChildWindow
+                      | Win32WindowStyleChild
                       deriving Eq
 
 fromWin32WindowStyle :: Win32WindowStyle -> WindowStyle
-fromWin32WindowStyle Win32WindowStylePopup       = wS_POPUP
-fromWin32WindowStyle Win32WindowStyleOverlapped  = wS_OVERLAPPEDWINDOW
-fromWin32WindowStyle Win32WindowStyleChildWindow = wS_CHILDWINDOW
+fromWin32WindowStyle Win32WindowStylePopup      = wS_POPUP
+fromWin32WindowStyle Win32WindowStyleOverlapped = wS_OVERLAPPEDWINDOW
+fromWin32WindowStyle Win32WindowStyleChild      = wS_CHILD
 
 data Win32Icon = Win32IconApplication
                | Win32IconHand
@@ -125,22 +128,22 @@ fromWin32Cursor Win32CursorSizeWE   = iDC_SIZEWE
 fromWin32Cursor Win32CursorSizeNS   = iDC_SIZENS
 
 class IsWin32GUIComponent a where
-    render :: a -> ReaderT (Maybe HWND) IO HWND
+    render :: a -> Maybe HWND -> IO HWND
 
 data Win32GUIComponent = forall a. IsWin32GUIComponent a => Win32GUIComponent a
 
 instance IsWin32GUIComponent Win32GUIComponent where
     render (Win32GUIComponent a) = render a
 
-data Win32Window = Win32Window Text Text Win32WindowStyle [Win32WindowProperty]
+data Win32Window = Win32Window Text [Win32WindowStyle] [Win32WindowProperty]
 
 instance IsWin32GUIComponent Win32Window where
-    render (Win32Window windowClassName windowTitle windowStyle windowProperties) = do
-        mainInstance <- liftIO $ getModuleHandle Nothing
+    render (Win32Window windowClassName windowStyle windowProperties) parentHWND = do
+        mainInstance <- getModuleHandle Nothing
 
         let windowClass = mkClassName (Text.unpack windowClassName)
 
-        _ <- liftIO $ registerClass
+        _ <- registerClass
                 ( cS_VREDRAW + cS_HREDRAW
                 , mainInstance
                 , Nothing
@@ -150,27 +153,28 @@ instance IsWin32GUIComponent Win32Window where
                 , windowClass
                 )
 
-        parent <- ask
-
-        window <- liftIO $ createWindow
+        window <- createWindow
                     windowClass
-                    (Text.unpack windowTitle)
-                    (fromWin32WindowStyle windowStyle)
+                    ""
+                    (foldl (.|.) 0 (map fromWin32WindowStyle windowStyle))
                     Nothing
                     Nothing
                     Nothing
                     Nothing
-                    parent
+                    parentHWND
                     Nothing
                     mainInstance
                     typicalWindowProc
 
-        liftIO $ mapM_ (flip applyProperty window) windowProperties
+        mapM_ (flip applyProperty window) windowProperties
 
-        _ <- liftIO $ showWindow window sW_SHOWNORMAL
-        liftIO $ updateWindow window
+        _ <- showWindow window sW_SHOWNORMAL
+        updateWindow window
 
         pure window
+
+win32WindowTitle :: Text -> Writer [Win32WindowProperty] ()
+win32WindowTitle = tell . pure . Win32WindowProperty . Win32WindowTitle
 
 win32WindowIcon :: Win32Icon -> Writer [Win32WindowProperty] ()
 win32WindowIcon = tell . pure . Win32WindowProperty . Win32WindowIcon
@@ -191,10 +195,10 @@ win32WindowChildren :: Writer [Win32GUIComponent] () -> Writer [Win32WindowPrope
 win32WindowChildren children =
     tell $ pure $ Win32WindowProperty $ Win32WindowChildren (snd $ runWriter children)
 
-win32Window :: Text -> Text -> Win32WindowStyle -> Writer [Win32WindowProperty] () -> Writer [Win32GUIComponent] ()
-win32Window windowClass windowTitle windowStyle windowProperties =
+win32Window :: Text -> [Win32WindowStyle] -> Writer [Win32WindowProperty] () -> Writer [Win32GUIComponent] ()
+win32Window windowClass windowStyle windowProperties =
     tell $ pure $ Win32GUIComponent $
-        Win32Window windowClass windowTitle windowStyle (snd $ runWriter windowProperties)
+        Win32Window windowClass windowStyle (snd $ runWriter windowProperties)
 
 main :: IO ()
 main = do
@@ -205,14 +209,16 @@ main = do
     brush         <- createSolidBrush (rgb 255 255 255)
 
     let testWindow =
-            win32Window "HShell-Main" "HShell" Win32WindowStyleOverlapped $ do
+            win32Window "HShell-Main" [Win32WindowStyleOverlapped] $ do
+                win32WindowTitle "HShell"
                 win32WindowIcon Win32IconQuestion
                 win32WindowCursor Win32CursorIBeam
                 win32WindowSize (displayWidth, displayHeight)
                 win32WindowPosition (0, 0)
                 win32WindowBrush brush
                 win32WindowChildren $ do
-                    win32Window "HShell-Sub" "Hello" Win32WindowStyleChildWindow $ do
+                    win32Window "HShell-Sub" [Win32WindowStyleOverlapped, Win32WindowStyleChild] $ do
+                        win32WindowTitle "HELLO"
                         win32WindowIcon Win32IconAsterisk
                         win32WindowCursor Win32CursorArrow
                         win32WindowSize (displayWidth `div` 2, displayHeight `div` 2)
@@ -221,7 +227,7 @@ main = do
 
     let a = head $ snd $ runWriter testWindow
 
-    hwnd <- runReaderT (render a) Nothing
+    hwnd <- render a Nothing
     messagePump hwnd
 
 typicalWindowProc :: LPPAINTSTRUCT -> WindowMessage -> WPARAM -> LPARAM -> IO LRESULT
