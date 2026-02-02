@@ -36,8 +36,8 @@ class IsWin32WindowProperty a where
 instance IsWin32WindowProperty Win32WindowProperty where
     applyProperty (Win32WindowProperty a) = applyProperty a
 
-newtype Win32WindowIcon     = Win32WindowIcon Icon
-newtype Win32WindowCursor   = Win32WindowCursor Cursor
+newtype Win32WindowIcon     = Win32WindowIcon Win32Icon
+newtype Win32WindowCursor   = Win32WindowCursor Win32Cursor
 newtype Win32WindowSize     = Win32WindowSize (Int, Int)
 newtype Win32WindowPosition = Win32WindowPosition (Int, Int)
 newtype Win32WindowBrush    = Win32WindowBrush HBRUSH
@@ -52,12 +52,12 @@ instance IsWin32GUIComponentProperty Win32WindowChildren
 
 instance IsWin32WindowProperty Win32WindowIcon where
     applyProperty (Win32WindowIcon icon) windowHWND =
-        loadIcon Nothing icon >>= \icon' ->
+        loadIcon Nothing (fromWin32Icon icon) >>= \icon' ->
             void $ c_SetClassLongPtr windowHWND (-14) icon'
 
 instance IsWin32WindowProperty Win32WindowCursor where
     applyProperty (Win32WindowCursor cursor) windowHWND =
-        loadCursor Nothing cursor >>= \cursor' ->
+        loadCursor Nothing (fromWin32Cursor cursor) >>= \cursor' ->
             void $ c_SetClassLongPtr windowHWND (-12) cursor'
 
 instance IsWin32WindowProperty Win32WindowSize where
@@ -79,10 +79,47 @@ instance IsWin32WindowProperty Win32WindowChildren where
 
 data Win32WindowStyle = Win32WindowStylePopup
                       | Win32WindowStyleOverlapped
+                      deriving Eq
 
 fromWin32WindowStyle :: Win32WindowStyle -> WindowStyle
 fromWin32WindowStyle Win32WindowStylePopup      = wS_POPUP
 fromWin32WindowStyle Win32WindowStyleOverlapped = wS_OVERLAPPEDWINDOW
+
+data Win32Icon = Win32IconApplication
+               | Win32IconHand
+               | Win32IconQuestion
+               | Win32IconExclamation
+               | Win32IconAsterisk
+               deriving Eq
+
+fromWin32Icon :: Win32Icon -> Icon
+fromWin32Icon Win32IconApplication = iDI_APPLICATION
+fromWin32Icon Win32IconHand        = iDI_HAND
+fromWin32Icon Win32IconQuestion    = iDI_QUESTION
+fromWin32Icon Win32IconExclamation = iDI_EXCLAMATION
+fromWin32Icon Win32IconAsterisk    = iDI_ASTERISK
+
+data Win32Cursor = Win32CursorArrow
+                 | Win32CursorIBeam
+                 | Win32CursorWait
+                 | Win32CursorCross
+                 | Win32CursorUparrow
+                 | Win32CursorSizeNWSE
+                 | Win32CursorSizeNESW
+                 | Win32CursorSizeWE
+                 | Win32CursorSizeNS
+                 deriving Eq
+
+fromWin32Cursor :: Win32Cursor -> Cursor
+fromWin32Cursor Win32CursorArrow    = iDC_ARROW
+fromWin32Cursor Win32CursorIBeam    = iDC_IBEAM
+fromWin32Cursor Win32CursorWait     = iDC_WAIT
+fromWin32Cursor Win32CursorCross    = iDC_CROSS
+fromWin32Cursor Win32CursorUparrow  = iDC_UPARROW
+fromWin32Cursor Win32CursorSizeNWSE = iDC_SIZENWSE
+fromWin32Cursor Win32CursorSizeNESW = iDC_SIZENESW
+fromWin32Cursor Win32CursorSizeWE   = iDC_SIZEWE
+fromWin32Cursor Win32CursorSizeNS   = iDC_SIZENS
 
 class IsWin32GUIComponent a where
     render :: a -> ReaderT (Maybe HWND) IO HWND
@@ -130,10 +167,10 @@ instance IsWin32GUIComponent Win32Window where
 
         pure window
 
-win32WindowIcon :: Icon -> Writer [Win32WindowProperty] ()
+win32WindowIcon :: Win32Icon -> Writer [Win32WindowProperty] ()
 win32WindowIcon = tell . pure . Win32WindowProperty . Win32WindowIcon
 
-win32WindowCursor :: Cursor -> Writer [Win32WindowProperty] ()
+win32WindowCursor :: Win32Cursor -> Writer [Win32WindowProperty] ()
 win32WindowCursor = tell . pure . Win32WindowProperty . Win32WindowCursor
 
 win32WindowSize :: (Int, Int) -> Writer [Win32WindowProperty] ()
@@ -163,16 +200,16 @@ main = do
     brush         <- createSolidBrush (rgb 255 255 255)
 
     let testWindow =
-            win32Window "HShell-Main" "HShell" Win32WindowStylePopup $ do
-                win32WindowIcon iDI_QUESTION
-                win32WindowCursor iDC_IBEAM
+            win32Window "HShell-Main" "HShell" Win32WindowStyleOverlapped $ do
+                win32WindowIcon Win32IconQuestion
+                win32WindowCursor Win32CursorIBeam
                 win32WindowSize (displayWidth, displayHeight)
                 win32WindowPosition (0, 0)
                 win32WindowBrush brush
                 win32WindowChildren $ do
                     win32Window "HShell-Sub" "Hello" Win32WindowStyleOverlapped $ do
-                        win32WindowIcon iDI_APPLICATION
-                        win32WindowCursor iDC_ARROW
+                        win32WindowIcon Win32IconAsterisk
+                        win32WindowCursor Win32CursorArrow
                         win32WindowSize (displayWidth `div` 2, displayHeight `div` 2)
                         win32WindowPosition (100, 100)
                         win32WindowBrush brush
