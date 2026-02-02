@@ -9,6 +9,7 @@ import           Control.Monad              (forM_, void, when)
 import           Control.Monad.Writer.Lazy  (MonadWriter (tell), Writer,
                                              runWriter)
 import           Data.Bits                  ((.|.))
+import           Data.Data                  (Typeable, cast)
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
 import           Foreign                    (Int32, Ptr, intPtrToPtr)
@@ -24,23 +25,29 @@ foreign import stdcall "windows.h SetClassLongPtrW"
 foreign import stdcall "windows.h SetWindowPos"
   c_SetWindowPos :: HWND -> HWND -> Int32 -> Int32 -> Int32 -> Int32 -> UINT -> IO BOOL
 
-data Win32WindowProperty = forall a. IsWin32WindowProperty a => Win32WindowProperty a
+data Win32WindowProperty = forall a. (Typeable a, Eq a, IsWin32WindowProperty a) => Win32WindowProperty a
 
-class IsWin32GUIComponentProperty a
+instance Eq Win32WindowProperty where
+    (Win32WindowProperty a) == (Win32WindowProperty b) =
+        case cast b of
+            Just b' -> a == b'
+            Nothing -> False
 
-class IsWin32WindowProperty a where
+class Eq a => IsWin32GUIComponentProperty a
+
+class Eq a => IsWin32WindowProperty a where
     applyProperty :: a -> HWND -> IO ()
 
 instance IsWin32WindowProperty Win32WindowProperty where
     applyProperty (Win32WindowProperty a) = applyProperty a
 
-newtype Win32WindowTitle    = Win32WindowTitle Text
-newtype Win32WindowIcon     = Win32WindowIcon Win32Icon
-newtype Win32WindowCursor   = Win32WindowCursor Win32Cursor
-newtype Win32WindowSize     = Win32WindowSize (Int, Int)
-newtype Win32WindowPosition = Win32WindowPosition (Int, Int)
-newtype Win32WindowBrush    = Win32WindowBrush HBRUSH
-newtype Win32WindowChildren = Win32WindowChildren [Win32GUIComponent]
+newtype Win32WindowTitle    = Win32WindowTitle    Text                deriving Eq
+newtype Win32WindowIcon     = Win32WindowIcon     Win32Icon           deriving Eq
+newtype Win32WindowCursor   = Win32WindowCursor   Win32Cursor         deriving Eq
+newtype Win32WindowSize     = Win32WindowSize     (Int, Int)          deriving Eq
+newtype Win32WindowPosition = Win32WindowPosition (Int, Int)          deriving Eq
+newtype Win32WindowBrush    = Win32WindowBrush    HBRUSH              deriving Eq
+newtype Win32WindowChildren = Win32WindowChildren [Win32GUIComponent] deriving Eq
 
 instance IsWin32GUIComponentProperty Win32WindowTitle
 instance IsWin32GUIComponentProperty Win32WindowIcon
@@ -127,15 +134,21 @@ fromWin32Cursor Win32CursorSizeNESW = iDC_SIZENESW
 fromWin32Cursor Win32CursorSizeWE   = iDC_SIZEWE
 fromWin32Cursor Win32CursorSizeNS   = iDC_SIZENS
 
-class IsWin32GUIComponent a where
+class Eq a => IsWin32GUIComponent a where
     render :: a -> Maybe HWND -> IO HWND
 
-data Win32GUIComponent = forall a. IsWin32GUIComponent a => Win32GUIComponent a
+data Win32GUIComponent = forall a. (Typeable a, Eq a, IsWin32GUIComponent a) => Win32GUIComponent a
+
+instance Eq Win32GUIComponent where
+    (Win32GUIComponent a) == (Win32GUIComponent b) =
+        case cast b of
+            Just b' -> a == b'
+            Nothing -> False
 
 instance IsWin32GUIComponent Win32GUIComponent where
     render (Win32GUIComponent a) = render a
 
-data Win32Window = Win32Window Text [Win32WindowStyle] [Win32WindowProperty]
+data Win32Window = Win32Window Text [Win32WindowStyle] [Win32WindowProperty] deriving Eq
 
 instance IsWin32GUIComponent Win32Window where
     render (Win32Window windowClassName windowStyle windowProperties) parentHWND = do
@@ -224,6 +237,14 @@ main = do
                         win32WindowSize (displayWidth `div` 2, displayHeight `div` 2)
                         win32WindowPosition (100, 100)
                         win32WindowBrush brush
+                        win32WindowChildren $ do
+                            win32Window "HShell-Sub-Sub" [Win32WindowStyleOverlapped, Win32WindowStyleChild] $ do
+                                win32WindowTitle "GOOD MORNING"
+                                win32WindowIcon Win32IconApplication
+                                win32WindowCursor Win32CursorWait
+                                win32WindowSize (50, 50)
+                                win32WindowPosition (0, 0)
+                                win32WindowBrush brush
 
     let a = head $ snd $ runWriter testWindow
 
