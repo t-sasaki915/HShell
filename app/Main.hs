@@ -66,13 +66,14 @@ main = do
     let a = head $ snd $ runWriter mainWindow
 
     hwnd <- render a Nothing
-    messagePump hwnd
 
-messagePump :: HWND -> IO ()
-messagePump hwnd =
+    messagePump
+
+messagePump :: IO ()
+messagePump =
     allocaMessage $ \msg ->
         let pump =
-                (try $ getMessage msg (Just hwnd) :: IO (Either SomeException Bool)) >>= \r ->
+                (try $ getMessage msg Nothing :: IO (Either SomeException Bool)) >>= \r ->
                     when (or r) $
                         void $ translateMessage msg >>
                             dispatchMessage msg >>
