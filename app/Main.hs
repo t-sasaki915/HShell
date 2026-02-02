@@ -6,10 +6,11 @@ module Main (main) where
 
 import           Control.Exception          (SomeException, try)
 import           Control.Monad              (forM_, void, when)
-import           Control.Monad.Reader       (MonadIO (liftIO), Reader,
-                                             ReaderT (runReaderT), runReader)
+import           Control.Monad.Reader       (MonadIO (liftIO),
+                                             MonadReader (ask),
+                                             ReaderT (runReaderT))
 import           Control.Monad.Writer.Lazy  (MonadWriter (tell), Writer,
-                                             WriterT, runWriter, runWriterT)
+                                             runWriter)
 import           Data.Bits                  ((.|.))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
@@ -79,11 +80,13 @@ instance IsWin32WindowProperty Win32WindowChildren where
 
 data Win32WindowStyle = Win32WindowStylePopup
                       | Win32WindowStyleOverlapped
+                      | Win32WindowStyleChildWindow
                       deriving Eq
 
 fromWin32WindowStyle :: Win32WindowStyle -> WindowStyle
-fromWin32WindowStyle Win32WindowStylePopup      = wS_POPUP
-fromWin32WindowStyle Win32WindowStyleOverlapped = wS_OVERLAPPEDWINDOW
+fromWin32WindowStyle Win32WindowStylePopup       = wS_POPUP
+fromWin32WindowStyle Win32WindowStyleOverlapped  = wS_OVERLAPPEDWINDOW
+fromWin32WindowStyle Win32WindowStyleChildWindow = wS_CHILDWINDOW
 
 data Win32Icon = Win32IconApplication
                | Win32IconHand
@@ -147,6 +150,8 @@ instance IsWin32GUIComponent Win32Window where
                 , windowClass
                 )
 
+        parent <- ask
+
         window <- liftIO $ createWindow
                     windowClass
                     (Text.unpack windowTitle)
@@ -155,7 +160,7 @@ instance IsWin32GUIComponent Win32Window where
                     Nothing
                     Nothing
                     Nothing
-                    Nothing
+                    parent
                     Nothing
                     mainInstance
                     typicalWindowProc
@@ -207,7 +212,7 @@ main = do
                 win32WindowPosition (0, 0)
                 win32WindowBrush brush
                 win32WindowChildren $ do
-                    win32Window "HShell-Sub" "Hello" Win32WindowStyleOverlapped $ do
+                    win32Window "HShell-Sub" "Hello" Win32WindowStyleChildWindow $ do
                         win32WindowIcon Win32IconAsterisk
                         win32WindowCursor Win32CursorArrow
                         win32WindowSize (displayWidth `div` 2, displayHeight `div` 2)
