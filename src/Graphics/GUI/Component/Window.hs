@@ -42,7 +42,7 @@ instance IsGUIComponent Window where
                     mainInstance
                     typicalWindowProc
 
-        mapM_ (flip applyProperty window) windowProperties
+        mapM_ (`applyProperty` window) windowProperties
 
         _ <- Win32.showWindow window Win32.sW_SHOWNORMAL
         Win32.updateWindow window

@@ -3,20 +3,37 @@
 module Main (main) where
 
 import           Control.Exception          (SomeException, try)
-import           Control.Monad              (when)
+import           Control.Monad              (void, when)
 import           Control.Monad.Writer.Lazy  (runWriter)
+import           Data.Bits                  ((.|.))
 import           Graphics.GUI.Component     (IsGUIComponent (render))
 import           Graphics.GUI.DSL
 import           Graphics.Win32             (HWND, allocaMessage,
                                              dispatchMessage, getMessage,
+                                             mB_ICONSTOP, mB_YESNO, messageBox,
                                              translateMessage)
-import           System.Process             (callCommand)
+import           System.Exit                (exitFailure)
+import           System.Process.Typed       (ExitCode (ExitSuccess), proc,
+                                             runProcess)
 import           System.Win32               (sM_CXSCREEN, sM_CYSCREEN)
 import           System.Win32.Info.Computer (getSystemMetrics)
 
+wpeInit :: IO ()
+wpeInit = do
+    try (runProcess (proc "X:\\Windows\\System32\\wpeinit.exe" [])) >>= \case
+        Right ExitSuccess           -> pure ()
+        Right x                     -> showMessageBox ("ExitCode: " ++ show x)
+        Left (err :: SomeException) -> showMessageBox (show err)
+
+    where
+        showMessageBox detail =
+            messageBox Nothing ("Failed to initialise Windows PE. Continue?\n" ++ detail) "HShell" (mB_ICONSTOP .|. mB_YESNO) >>= \case
+                6 -> pure ()
+                _ -> exitFailure
+
 main :: IO ()
 main = do
-    callCommand "wpeinit"
+    wpeInit
 
     displayWidth  <- getSystemMetrics sM_CXSCREEN
     displayHeight <- getSystemMetrics sM_CYSCREEN
@@ -56,8 +73,8 @@ messagePump hwnd =
     allocaMessage $ \msg ->
         let pump =
                 (try $ getMessage msg (Just hwnd) :: IO (Either SomeException Bool)) >>= \r ->
-                    when (either (const False) id r) $
-                        () <$ translateMessage msg >>
-                            () <$ dispatchMessage msg >>
+                    when (or r) $
+                        void $ translateMessage msg >>
+                            dispatchMessage msg >>
                                 pump
         in pump

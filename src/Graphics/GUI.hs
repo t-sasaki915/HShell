@@ -60,4 +60,4 @@ toWin32Cursor SizeNS   = Win32.iDC_SIZENS
 data Brush = SolidBrush Int Int Int deriving Eq
 
 toWin32Brush :: Brush -> IO Win32.HBRUSH
-toWin32Brush (SolidBrush r g b) = Win32.createSolidBrush (Win32.rgb (fromIntegral r) (fromIntegral g) (fromIntegral b))
+toWin32Brush (SolidBrush r g b) = Win32.createSolidBrush (Win32.rgb (fromIntegral r) (fromIntegral g) (fromIntegral b)) -- TODO: DeleteObject
