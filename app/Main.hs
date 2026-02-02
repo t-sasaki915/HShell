@@ -149,7 +149,7 @@ win32WindowChildren :: Writer [Win32GUIComponent] () -> Writer [Win32WindowPrope
 win32WindowChildren children =
     tell $ pure $ Win32WindowProperty $ Win32WindowChildren (snd $ runWriter children)
 
-win32Window :: Text -> Text -> Win32WindowStyle -> Writer [Win32WindowProperty] () -> WriterT [Win32GUIComponent] (Reader (Maybe HWND)) ()
+win32Window :: Text -> Text -> Win32WindowStyle -> Writer [Win32WindowProperty] () -> Writer [Win32GUIComponent] ()
 win32Window windowClass windowTitle windowStyle windowProperties =
     tell $ pure $ Win32GUIComponent $
         Win32Window windowClass windowTitle windowStyle (snd $ runWriter windowProperties)
@@ -169,8 +169,15 @@ main = do
                 win32WindowSize (displayWidth, displayHeight)
                 win32WindowPosition (0, 0)
                 win32WindowBrush brush
+                win32WindowChildren $ do
+                    win32Window "HShell-Sub" "Hello" Win32WindowStyleOverlapped $ do
+                        win32WindowIcon iDI_APPLICATION
+                        win32WindowCursor iDC_ARROW
+                        win32WindowSize (displayWidth `div` 2, displayHeight `div` 2)
+                        win32WindowPosition (100, 100)
+                        win32WindowBrush brush
 
-    let a = head $ snd $ runReader (runWriterT testWindow) Nothing
+    let a = head $ snd $ runWriter testWindow
 
     hwnd <- runReaderT (render a) Nothing
     messagePump hwnd
