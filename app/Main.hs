@@ -4,15 +4,17 @@
 module Main (main) where
 
 import           Control.Exception          (SomeException, try)
-import           Control.Monad              (when)
-import           Control.Monad.Reader       (Reader)
+import           Control.Monad              (void, when)
+import           Control.Monad.Reader       (Reader, ReaderT)
 import           Control.Monad.Writer.Lazy  (MonadWriter (tell), Writer,
                                              WriterT (runWriterT), runWriter,
                                              runWriterT)
 import           Data.Functor               ((<&>))
+import qualified Data.List                  as List
 import           Data.List.Extra            (firstJust)
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
+import           Foreign                    (ptrToIntPtr, shiftL, (.&.), (.|.))
 import           Graphics.Win32             hiding (try)
 import           System.Process             (callCommand)
 import           System.Win32               (sM_CXSCREEN, sM_CYSCREEN)
@@ -27,28 +29,38 @@ data Win32WindowProperty = forall a. IsWin32WindowProperty a => Win32WindowPrope
 
 class IsWin32GUIComponentProperty a
 
-class IsWin32WindowProperty a
+class IsWin32WindowProperty a where
+    applyProperty :: a -> HWND -> IO ()
 
-data Win32WindowIcon            = Win32WindowIcon Icon
-data Win32WindowCursor          = Win32WindowCursor Cursor
-data Win32WindowSize            = Win32WindowSize (Int, Int)
-data Win32WindowInitialPosition = Win32WindowInitialPosition (Int, Int)
-data Win32WindowBrush           = Win32WindowBrush HBRUSH
-data Win32WindowChildren        = Win32WindowChildren (Reader (Maybe HWND) [Win32GUIComponent])
+newtype Win32WindowIcon     = Win32WindowIcon Icon
+newtype Win32WindowCursor   = Win32WindowCursor Cursor
+newtype Win32WindowSize     = Win32WindowSize (Int, Int)
+newtype Win32WindowPosition = Win32WindowPosition (Int, Int)
+newtype Win32WindowChildren = Win32WindowChildren (Reader (Maybe HWND) [Win32GUIComponent])
 
 instance IsWin32GUIComponentProperty Win32WindowIcon
 instance IsWin32GUIComponentProperty Win32WindowCursor
 instance IsWin32GUIComponentProperty Win32WindowSize
-instance IsWin32GUIComponentProperty Win32WindowInitialPosition
-instance IsWin32GUIComponentProperty Win32WindowBrush
+instance IsWin32GUIComponentProperty Win32WindowPosition
 instance IsWin32GUIComponentProperty Win32WindowChildren
 
-instance IsWin32WindowProperty Win32WindowIcon
-instance IsWin32WindowProperty Win32WindowCursor
-instance IsWin32WindowProperty Win32WindowSize
-instance IsWin32WindowProperty Win32WindowInitialPosition
-instance IsWin32WindowProperty Win32WindowBrush
-instance IsWin32WindowProperty Win32WindowChildren
+instance IsWin32WindowProperty Win32WindowIcon where
+    applyProperty (Win32WindowIcon icon) windowHWND =
+        sendMessage windowHWND wM_SETICON 1 (fromIntegral $ ptrToIntPtr icon) >>
+            sendMessage windowHWND wM_SETICON 0 (fromIntegral $ ptrToIntPtr icon) >>
+                pure ()
+instance IsWin32WindowProperty Win32WindowCursor where
+    applyProperty (Win32WindowCursor cursor) windowHWND =
+        void $ sendMessage windowHWND wM_SETCURSOR 0 (fromIntegral $ ptrToIntPtr cursor)
+instance IsWin32WindowProperty Win32WindowSize where
+    applyProperty (Win32WindowSize (width, height)) windowHWND =
+        void $ sendMessage windowHWND wM_SIZE 2 (fromIntegral $ ((fromIntegral width :: Integer) .&. 0xFFFF) .|. (fromIntegral height `shiftL` 16))
+instance IsWin32WindowProperty Win32WindowPosition where
+    applyProperty (Win32WindowPosition (x, y)) windowHWND =
+        moveWindow windowHWND x y 0 0 False
+instance IsWin32WindowProperty Win32WindowChildren where
+    applyProperty (Win32WindowChildren children) windowHWND =
+        0
 
 data Win32WindowStyle = Win32WindowStylePopup
 
@@ -56,21 +68,23 @@ fromWin32WindowStyle :: Win32WindowStyle -> WindowStyle
 fromWin32WindowStyle Win32WindowStylePopup = wS_POPUP
 
 class IsWin32GUIComponent a where
-    render :: a -> IO HWND
+    render :: a -> ReaderT (Maybe HWND) IO HWND
 
 data Win32GUIComponent = forall a. IsWin32GUIComponent a => Win32GUIComponent a
 
 data Win32Window = Win32Window Text Text Win32WindowStyle [Win32WindowProperty]
 
 instance IsWin32GUIComponent Win32Window where
-    render (Win32Window windowClassName windowTitle windowStyle windowProperties) = do
-        {-mainInstance <- getModuleHandle Nothing
+    {-render (Win32Window windowClassName windowTitle windowStyle windowProperties) = do
+        mainInstance <- getModuleHandle Nothing
 
         let
             windowClass   = mkClassName (Text.unpack windowClassName)
             windowIcon    = flip firstJust windowProperties $ \case
-                (Win32WindowIcon x)            -> Just x
-                _                              -> Nothing
+                (Win32WindowProperty x) ->
+                    case x of
+                        (Win32WindowIcon x) -> Just x
+
             windowCursor  = flip firstJust windowProperties $ \case
                 (Win32WindowCursor x)          -> Just x
                 _                              -> Nothing
@@ -81,7 +95,7 @@ instance IsWin32GUIComponent Win32Window where
                 (Win32WindowSize x)            -> Just x
                 _                              -> Nothing
             windowInitPos = flip firstJust windowProperties $ \case
-                (Win32WindowInitialPosition x) -> Just x
+                (Win32WindowPosition x) -> Just x
                 _                              -> Nothing
 
         windowIcon'   <- traverse (loadIcon Nothing) windowIcon
@@ -109,8 +123,8 @@ instance IsWin32GUIComponent Win32Window where
                     Nothing
                     mainInstance
                     typicalWindowProc
-        -}
-        pure ()
+
+        pure ()-}
 
 win32WindowIcon :: Icon -> Writer [Win32WindowProperty] ()
 win32WindowIcon = tell . pure . Win32WindowProperty . Win32WindowIcon
@@ -121,11 +135,8 @@ win32WindowCursor = tell . pure . Win32WindowProperty . Win32WindowCursor
 win32WindowSize :: (Int, Int) -> Writer [Win32WindowProperty] ()
 win32WindowSize = tell . pure . Win32WindowProperty . Win32WindowSize
 
-win32WindowInitialPosition :: (Int, Int) -> Writer [Win32WindowProperty] ()
-win32WindowInitialPosition = tell . pure . Win32WindowProperty . Win32WindowInitialPosition
-
-win32WindowBrush :: HBRUSH -> Writer [Win32WindowProperty] ()
-win32WindowBrush = tell . pure . Win32WindowProperty . Win32WindowBrush
+win32WindowPosition :: (Int, Int) -> Writer [Win32WindowProperty] ()
+win32WindowPosition = tell . pure . Win32WindowProperty . Win32WindowPosition
 
 win32WindowChildren :: WriterT [Win32GUIComponent] (Reader (Maybe HWND)) () -> Writer [Win32WindowProperty] ()
 win32WindowChildren children =
@@ -144,18 +155,12 @@ main = do
     displayHeight <- getSystemMetrics sM_CYSCREEN
     brush         <- createSolidBrush (rgb 255 255 255)
 
-    {-let testWindow =
-            win32Window
-                "HShell"
-                "HShell"
-                Win32WindowStylePopup
-                [ Win32WindowIcon iDI_QUESTION
-                , Win32WindowCursor iDC_WAIT
-                , Win32WindowSize (displayWidth, displayHeight)
-                , Win32WindowInitialPosition (0, 0)
-                , Win32WindowBrush brush
-                ]
-                []-}
+    let testWindow =
+            win32Window "HShell-Main" "HShell" Win32WindowStylePopup $ do
+                win32WindowIcon iDI_QUESTION
+                win32WindowCursor iDC_IBEAM
+                win32WindowSize (displayWidth, displayHeight)
+                win32WindowPosition (0, 0)
 
     hwnd <- createMainWindow displayWidth displayHeight typicalWindowProc
     messagePump hwnd
