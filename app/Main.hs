@@ -46,7 +46,7 @@ newtype Win32WindowIcon     = Win32WindowIcon     Win32Icon           deriving E
 newtype Win32WindowCursor   = Win32WindowCursor   Win32Cursor         deriving Eq
 newtype Win32WindowSize     = Win32WindowSize     (Int, Int)          deriving Eq
 newtype Win32WindowPosition = Win32WindowPosition (Int, Int)          deriving Eq
-newtype Win32WindowBrush    = Win32WindowBrush    HBRUSH              deriving Eq
+newtype Win32WindowBrush    = Win32WindowBrush    Win32Brush          deriving Eq
 newtype Win32WindowChildren = Win32WindowChildren [Win32GUIComponent] deriving Eq
 
 instance IsWin32GUIComponentProperty Win32WindowTitle
@@ -81,7 +81,8 @@ instance IsWin32WindowProperty Win32WindowPosition where
 
 instance IsWin32WindowProperty Win32WindowBrush where
     applyProperty (Win32WindowBrush brush) windowHWND =
-        void $ c_SetClassLongPtr windowHWND (-10) brush
+        fromWin32Brush brush >>= \brush' ->
+            void $ c_SetClassLongPtr windowHWND (-10) brush'
 
 instance IsWin32WindowProperty Win32WindowChildren where
     applyProperty (Win32WindowChildren children) window =
@@ -133,6 +134,11 @@ fromWin32Cursor Win32CursorSizeNWSE = iDC_SIZENWSE
 fromWin32Cursor Win32CursorSizeNESW = iDC_SIZENESW
 fromWin32Cursor Win32CursorSizeWE   = iDC_SIZEWE
 fromWin32Cursor Win32CursorSizeNS   = iDC_SIZENS
+
+data Win32Brush = Win32SolidBrush Int Int Int deriving Eq
+
+fromWin32Brush :: Win32Brush -> IO HBRUSH
+fromWin32Brush (Win32SolidBrush r g b) = createSolidBrush (rgb (fromIntegral r) (fromIntegral g) (fromIntegral b))
 
 class Eq a => IsWin32GUIComponent a where
     render :: a -> Maybe HWND -> IO HWND
@@ -201,7 +207,7 @@ win32WindowSize = tell . pure . Win32WindowProperty . Win32WindowSize
 win32WindowPosition :: (Int, Int) -> Writer [Win32WindowProperty] ()
 win32WindowPosition = tell . pure . Win32WindowProperty . Win32WindowPosition
 
-win32WindowBrush :: HBRUSH -> Writer [Win32WindowProperty] ()
+win32WindowBrush :: Win32Brush -> Writer [Win32WindowProperty] ()
 win32WindowBrush = tell . pure . Win32WindowProperty . Win32WindowBrush
 
 win32WindowChildren :: Writer [Win32GUIComponent] () -> Writer [Win32WindowProperty] ()
@@ -219,7 +225,6 @@ main = do
 
     displayWidth  <- getSystemMetrics sM_CXSCREEN
     displayHeight <- getSystemMetrics sM_CYSCREEN
-    brush         <- createSolidBrush (rgb 255 255 255)
 
     let testWindow =
             win32Window "HShell-Main" [Win32WindowStyleOverlapped] $ do
@@ -228,7 +233,7 @@ main = do
                 win32WindowCursor Win32CursorIBeam
                 win32WindowSize (displayWidth, displayHeight)
                 win32WindowPosition (0, 0)
-                win32WindowBrush brush
+                win32WindowBrush (Win32SolidBrush 255 255 255)
                 win32WindowChildren $ do
                     win32Window "HShell-Sub" [Win32WindowStyleOverlapped, Win32WindowStyleChild] $ do
                         win32WindowTitle "HELLO"
@@ -236,7 +241,7 @@ main = do
                         win32WindowCursor Win32CursorArrow
                         win32WindowSize (displayWidth `div` 2, displayHeight `div` 2)
                         win32WindowPosition (100, 100)
-                        win32WindowBrush brush
+                        win32WindowBrush (Win32SolidBrush 255 0 0)
                         win32WindowChildren $ do
                             win32Window "HShell-Sub-Sub" [Win32WindowStyleOverlapped, Win32WindowStyleChild] $ do
                                 win32WindowTitle "GOOD MORNING"
@@ -244,7 +249,7 @@ main = do
                                 win32WindowCursor Win32CursorWait
                                 win32WindowSize (50, 50)
                                 win32WindowPosition (0, 0)
-                                win32WindowBrush brush
+                                win32WindowBrush (Win32SolidBrush 0 255 0)
 
     let a = head $ snd $ runWriter testWindow
 
