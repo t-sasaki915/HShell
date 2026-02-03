@@ -96,8 +96,10 @@ instance IsWindowProperty WindowPosition where
 
 instance IsWindowProperty WindowBrush where
     applyProperty (WindowBrush brush) windowHWND =
-        toWin32Brush brush >>= \brush' ->
-            void $ Win32.c_SetClassLongPtr windowHWND (-10) brush'
+        Win32.c_GetClassLongPtr windowHWND (-10) >>= \oldBrush ->
+            Win32.c_DeleteBrush (intPtrToPtr $ fromIntegral oldBrush) >>
+                toWin32Brush brush >>= \brush' ->
+                    void $ Win32.c_SetClassLongPtr windowHWND (-10) brush'
 
 instance IsWindowProperty WindowChildren where
     applyProperty (WindowChildren children) window =
