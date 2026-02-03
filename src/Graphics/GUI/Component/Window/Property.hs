@@ -23,6 +23,7 @@ import           Graphics.GUI.Component          (GUIComponent (..),
                                                   IsGUIComponent (render))
 import           Graphics.GUI.Component.Property (IsGUIComponentProperty)
 import qualified Graphics.GUI.Foreign            as Win32
+import           Graphics.GUI.Internal           (withRandomTString)
 import qualified Graphics.Win32                  as Win32
 
 data WindowProperty = forall a. (Typeable a, Eq a, IsWindowProperty a) => WindowProperty a
@@ -75,7 +76,7 @@ instance IsWindowProperty WindowSize where
     applyProperty (WindowSize (width, height)) windowHWND =
         void $
             Win32.c_SetWindowPos windowHWND
-                (intPtrToPtr 0)
+                Win32.nullPtr
                 0
                 0
                 (fromIntegral width)
@@ -87,7 +88,7 @@ instance IsWindowProperty WindowPosition where
         void $
             Win32.c_SetWindowPos
                 windowHWND
-                (intPtrToPtr 0)
+                Win32.nullPtr
                 (fromIntegral x)
                 (fromIntegral y)
                 0
@@ -95,13 +96,20 @@ instance IsWindowProperty WindowPosition where
                 (Win32.sWP_NOSIZE .|. Win32.sWP_NOZORDER .|. Win32.sWP_NOACTIVATE)
 
 instance IsWindowProperty WindowBrush where
-    applyProperty (WindowBrush brush) windowHWND =
+    applyProperty (WindowBrush brush) windowHWND = do
         Win32.c_GetClassLongPtr windowHWND (-10) >>= \oldBrush ->
-            Win32.c_DeleteBrush (intPtrToPtr $ fromIntegral oldBrush) >>
-                toWin32Brush brush >>= \brush' ->
-                    void $ Win32.c_SetClassLongPtr windowHWND (-10) brush'
+            void $ Win32.c_DeleteBrush (intPtrToPtr $ fromIntegral oldBrush)
+
+        toWin32Brush brush >>= \brush' -> do
+            void $ Win32.c_SetClassLongPtr windowHWND (-10) brush'
+
+            withRandomTString $ \pName ->
+                void $ Win32.c_SetProp windowHWND pName brush'
 
 instance IsWindowProperty WindowChildren where
-    applyProperty (WindowChildren children) window =
-        forM_ children $ \(GUIComponent child) ->
-            render child (Just window)
+    applyProperty (WindowChildren children) windowHWND =
+        forM_ children $ \(GUIComponent child) -> do
+            childHWND <- render child (Just windowHWND)
+
+            withRandomTString $ \pName ->
+                void $ Win32.c_SetProp windowHWND pName childHWND

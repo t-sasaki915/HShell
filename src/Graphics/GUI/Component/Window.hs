@@ -1,13 +1,16 @@
 module Graphics.GUI.Component.Window (Window (..)) where
 
+import           Control.Monad                          (void)
 import           Data.Bits                              ((.|.))
 import           Data.Text                              (Text)
 import qualified Data.Text                              as Text
+import           Foreign                                (freeHaskellFunPtr)
 import           Graphics.GUI                           (WindowStyle,
                                                          toWin32WindowStyle)
 import           Graphics.GUI.Component                 (IsGUIComponent (..))
 import           Graphics.GUI.Component.Window.Property (IsWindowProperty (..),
                                                          WindowProperty (..))
+import qualified Graphics.GUI.Foreign                   as Win32
 import qualified Graphics.Win32                         as Win32
 import qualified System.Win32                           as Win32
 
@@ -51,5 +54,22 @@ instance IsGUIComponent Window where
 
 typicalWindowProc :: Win32.LPPAINTSTRUCT -> Win32.WindowMessage -> Win32.WPARAM -> Win32.LPARAM -> IO Win32.LRESULT
 typicalWindowProc hwnd wmsg wParam lParam
-    | wmsg == Win32.wM_DESTROY = Win32.sendMessage hwnd Win32.wM_QUIT 1 0 >> pure 0
-    | otherwise          = Win32.defWindowProcSafe (Just hwnd) wmsg wParam lParam
+    | wmsg == Win32.wM_DESTROY =
+        cleanupResources hwnd >>
+            Win32.sendMessage hwnd Win32.wM_QUIT 1 0 >>
+                pure 0
+
+    | otherwise =
+        Win32.defWindowProcSafe (Just hwnd) wmsg wParam lParam
+
+cleanupResources :: Win32.HWND -> IO ()
+cleanupResources hwnd = do
+    let callback _ _ hData _ = do
+            Win32.c_DeleteObject hData >>
+                pure True
+
+    callbackPtr <- Win32.makePropEnumProcEx callback
+
+    void $ Win32.c_EnumPropsEx hwnd callbackPtr 0
+
+    freeHaskellFunPtr callbackPtr

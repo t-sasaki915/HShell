@@ -50,7 +50,7 @@ instance IsButtonProperty ButtonSize where
     applyProperty (ButtonSize (width, height)) buttonHWND =
         void $
             Win32.c_SetWindowPos buttonHWND
-                (intPtrToPtr 0)
+                Win32.nullPtr
                 0
                 0
                 (fromIntegral width)
@@ -62,7 +62,7 @@ instance IsButtonProperty ButtonPosition where
         void $
             Win32.c_SetWindowPos
                 buttonHWND
-                (intPtrToPtr 0)
+                Win32.nullPtr
                 (fromIntegral x)
                 (fromIntegral y)
                 0

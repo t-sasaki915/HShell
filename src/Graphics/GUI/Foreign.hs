@@ -4,12 +4,16 @@ module Graphics.GUI.Foreign
     ( c_SetClassLongPtr
     , c_GetClassLongPtr
     , c_SetWindowPos
+    , c_SetProp
+    , c_EnumPropsEx
+    , c_DeleteObject
+    , makePropEnumProcEx
     ) where
 
 import           Data.Int       (Int32)
-import           Foreign        (Ptr)
+import           Foreign        (FunPtr, Ptr)
 import           Foreign.C      (CIntPtr (..))
-import           Graphics.Win32 (BOOL, HWND, UINT)
+import           Graphics.Win32 (BOOL, HANDLE, HWND, INT, LPCTSTR, UINT)
 
 foreign import stdcall "windows.h SetClassLongPtrW"
   c_SetClassLongPtr :: HWND -> Int32 -> Ptr () -> IO (Ptr ())
@@ -19,3 +23,17 @@ foreign import stdcall "windows.h SetWindowPos"
 
 foreign import ccall "GetClassLongPtrW"
   c_GetClassLongPtr :: HWND -> Int -> IO CIntPtr
+
+foreign import ccall "SetPropW"
+  c_SetProp :: HWND -> LPCTSTR -> HANDLE -> IO Bool
+
+type PropEnumProcEx = HWND -> LPCTSTR -> HANDLE -> CIntPtr -> IO BOOL
+
+foreign import ccall "wrapper"
+  makePropEnumProcEx :: PropEnumProcEx -> IO (FunPtr PropEnumProcEx)
+
+foreign import ccall "EnumPropsExW"
+  c_EnumPropsEx :: HWND -> FunPtr PropEnumProcEx -> CIntPtr -> IO INT
+
+foreign import ccall "DeleteObject"
+  c_DeleteObject :: Ptr () -> IO BOOL
