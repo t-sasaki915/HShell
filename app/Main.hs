@@ -61,7 +61,7 @@ main = do
                         windowChildren $ do
                             button $ do
                                 buttonLabel "TEST BUTTON 2"
-                                buttonSize (50, 100)
+                                buttonSize (100, 100)
                                 buttonPosition (20, 50)
 
                             window "HShell-Sub-Sub" [Overlapped, Child] $ do
