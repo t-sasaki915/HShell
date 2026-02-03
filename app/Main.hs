@@ -53,7 +53,7 @@ main = do
 
                     window "HShell-Sub" [Overlapped, Child] $ do
                         windowTitle "HELLO"
-                        windowIcon Asterisk
+                        windowIcon (FromResource 102)
                         windowCursor Arrow
                         windowSize (displayWidth `div` 2, displayHeight `div` 2)
                         windowPosition (100, 100)

@@ -11,10 +11,11 @@ module Graphics.GUI.Foreign
     , gCLP_HICON
     , gCLP_HCURSOR
     , gCLP_HBRBACKGROUND
+    , makeIntResource
     ) where
 
 import           Data.Int       (Int32)
-import           Foreign        (FunPtr, Ptr)
+import           Foreign        (FunPtr, Ptr, intPtrToPtr)
 import           Foreign.C      (CIntPtr (..))
 import           Graphics.Win32 (BOOL, HANDLE, HWND, INT, LPCTSTR, UINT)
 
@@ -49,3 +50,6 @@ gCLP_HCURSOR = -12
 
 gCLP_HBRBACKGROUND :: Int32
 gCLP_HBRBACKGROUND = -10
+
+makeIntResource :: Int -> LPCTSTR
+makeIntResource = intPtrToPtr . fromIntegral
