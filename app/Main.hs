@@ -8,10 +8,9 @@ import           Control.Monad.Writer.Lazy  (runWriter)
 import           Data.Bits                  ((.|.))
 import           Graphics.GUI.Component     (IsGUIComponent (render))
 import           Graphics.GUI.DSL
-import           Graphics.Win32             (HWND, allocaMessage,
-                                             dispatchMessage, getMessage,
-                                             mB_ICONSTOP, mB_YESNO, messageBox,
-                                             translateMessage)
+import           Graphics.Win32             (allocaMessage, dispatchMessage,
+                                             getMessage, mB_ICONSTOP, mB_YESNO,
+                                             messageBox, translateMessage)
 import           System.Exit                (exitFailure)
 import           System.Process.Typed       (ExitCode (ExitSuccess), proc,
                                              runProcess)
@@ -65,7 +64,7 @@ main = do
 
     let a = head $ snd $ runWriter mainWindow
 
-    hwnd <- render a Nothing
+    _ <- render a Nothing
 
     messagePump
 
