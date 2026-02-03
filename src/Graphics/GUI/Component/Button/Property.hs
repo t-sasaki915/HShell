@@ -13,7 +13,6 @@ import           Data.Bits                       ((.|.))
 import           Data.Data                       (Typeable, cast)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as Text
-import           Foreign                         (intPtrToPtr)
 import           Graphics.GUI.Component.Property (IsGUIComponentProperty)
 import qualified Graphics.GUI.Foreign            as Win32
 import qualified Graphics.Win32                  as Win32

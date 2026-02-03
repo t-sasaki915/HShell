@@ -8,7 +8,7 @@ import           Graphics.GUI.Component.Button.Property (ButtonProperty,
                                                          IsButtonProperty (..))
 import qualified Graphics.Win32                         as Win32
 
-data Button = Button [ButtonProperty] deriving Eq
+newtype Button = Button [ButtonProperty] deriving Eq
 
 instance IsGUIComponent Button where
     render (Button buttonProperties) parentHWND = do
@@ -18,10 +18,10 @@ instance IsGUIComponent Button where
             (Win32.mkClassName "BUTTON")
             ""
             (Win32.wS_TABSTOP .|. Win32.wS_VISIBLE .|. Win32.wS_CHILD .|. Win32.bS_DEFPUSHBUTTON)
-            (Just 10)
-            (Just 10)
-            (Just 100)
-            (Just 100)
+            Nothing
+            Nothing
+            Nothing
+            Nothing
             parentHWND
             Nothing
             (intPtrToPtr $ fromIntegral parentInstance)

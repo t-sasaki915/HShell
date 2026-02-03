@@ -8,6 +8,9 @@ module Graphics.GUI.Foreign
     , c_EnumPropsEx
     , c_DeleteObject
     , makePropEnumProcEx
+    , gCLP_HICON
+    , gCLP_HCURSOR
+    , gCLP_HBRBACKGROUND
     ) where
 
 import           Data.Int       (Int32)
@@ -22,7 +25,7 @@ foreign import stdcall "windows.h SetWindowPos"
   c_SetWindowPos :: HWND -> HWND -> Int32 -> Int32 -> Int32 -> Int32 -> UINT -> IO BOOL
 
 foreign import ccall "GetClassLongPtrW"
-  c_GetClassLongPtr :: HWND -> Int -> IO CIntPtr
+  c_GetClassLongPtr :: HWND -> Int32 -> IO CIntPtr
 
 foreign import ccall "SetPropW"
   c_SetProp :: HWND -> LPCTSTR -> HANDLE -> IO Bool
@@ -37,3 +40,12 @@ foreign import ccall "EnumPropsExW"
 
 foreign import ccall "DeleteObject"
   c_DeleteObject :: Ptr () -> IO BOOL
+
+gCLP_HICON :: Int32
+gCLP_HICON = -14
+
+gCLP_HCURSOR :: Int32
+gCLP_HCURSOR = -12
+
+gCLP_HBRBACKGROUND :: Int32
+gCLP_HBRBACKGROUND = -10

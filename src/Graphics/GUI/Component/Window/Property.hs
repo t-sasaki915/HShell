@@ -65,12 +65,12 @@ instance IsWindowProperty WindowTitle where
 instance IsWindowProperty WindowIcon where
     applyProperty (WindowIcon icon) windowHWND =
         Win32.loadIcon Nothing (toWin32Icon icon) >>= \icon' ->
-            void $ Win32.c_SetClassLongPtr windowHWND (-14) icon'
+            void $ Win32.c_SetClassLongPtr windowHWND Win32.gCLP_HICON icon'
 
 instance IsWindowProperty WindowCursor where
     applyProperty (WindowCursor cursor) windowHWND =
         Win32.loadCursor Nothing (toWin32Cursor cursor) >>= \cursor' ->
-            void $ Win32.c_SetClassLongPtr windowHWND (-12) cursor'
+            void $ Win32.c_SetClassLongPtr windowHWND Win32.gCLP_HCURSOR cursor'
 
 instance IsWindowProperty WindowSize where
     applyProperty (WindowSize (width, height)) windowHWND =
@@ -97,11 +97,11 @@ instance IsWindowProperty WindowPosition where
 
 instance IsWindowProperty WindowBrush where
     applyProperty (WindowBrush brush) windowHWND = do
-        Win32.c_GetClassLongPtr windowHWND (-10) >>= \oldBrush ->
+        Win32.c_GetClassLongPtr windowHWND Win32.gCLP_HBRBACKGROUND >>= \oldBrush ->
             void $ Win32.c_DeleteBrush (intPtrToPtr $ fromIntegral oldBrush)
 
         toWin32Brush brush >>= \brush' -> do
-            void $ Win32.c_SetClassLongPtr windowHWND (-10) brush'
+            void $ Win32.c_SetClassLongPtr windowHWND Win32.gCLP_HBRBACKGROUND brush'
 
             withRandomTString $ \pName ->
                 void $ Win32.c_SetProp windowHWND pName brush'
