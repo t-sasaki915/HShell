@@ -40,7 +40,7 @@ windowChildren :: Writer [GUIComponent] () -> Writer [WindowProperty] ()
 windowChildren children =
     tell $ pure $ WindowProperty $ WindowChildren (snd $ runWriter children)
 
-window :: Text -> [WindowStyle] -> Writer [WindowProperty] () -> Writer [GUIComponent] ()
+window :: Text -> WindowStyle -> Writer [WindowProperty] () -> Writer [GUIComponent] ()
 window windowClass windowStyle windowProperties =
     tell $ pure $ GUIComponent $
         Window windowClass windowStyle (snd $ runWriter windowProperties)

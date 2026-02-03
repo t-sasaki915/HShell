@@ -1,7 +1,7 @@
 module Graphics.GUI.Component.Window (Window (..)) where
 
-import           Control.Monad                          (void)
-import           Data.Bits                              ((.|.))
+import           Control.Monad                          (void, when)
+import           Data.IORef                             (atomicModifyIORef')
 import           Data.Text                              (Text)
 import qualified Data.Text                              as Text
 import           Foreign                                (freeHaskellFunPtr)
@@ -11,10 +11,11 @@ import           Graphics.GUI.Component                 (IsGUIComponent (..))
 import           Graphics.GUI.Component.Window.Property (IsWindowProperty (..),
                                                          WindowProperty (..))
 import qualified Graphics.GUI.Foreign                   as Win32
+import qualified Graphics.GUI.Internal                  as Internal
 import qualified Graphics.Win32                         as Win32
 import qualified System.Win32                           as Win32
 
-data Window = Window Text [WindowStyle] [WindowProperty] deriving Eq
+data Window = Window Text WindowStyle [WindowProperty] deriving Eq
 
 instance IsGUIComponent Window where
     render (Window windowClassName windowStyle windowProperties) parentHWND = do
@@ -35,7 +36,7 @@ instance IsGUIComponent Window where
         window <- Win32.createWindow
                     windowClass
                     ""
-                    (foldl (.|.) 0 (map toWin32WindowStyle windowStyle))
+                    (toWin32WindowStyle windowStyle)
                     Nothing
                     Nothing
                     Nothing
@@ -50,22 +51,34 @@ instance IsGUIComponent Window where
         _ <- Win32.showWindow window Win32.sW_SHOWNORMAL
         Win32.updateWindow window
 
+        Internal.activeWindowCountRef >>= \activeWindowCountRef' ->
+            void $ atomicModifyIORef' activeWindowCountRef' $ \n -> (n + 1, n + 1)
+
         pure window
 
 typicalWindowProc :: Win32.LPPAINTSTRUCT -> Win32.WindowMessage -> Win32.WPARAM -> Win32.LPARAM -> IO Win32.LRESULT
 typicalWindowProc hwnd wmsg wParam lParam
     | wmsg == Win32.wM_DESTROY =
-        cleanupResources hwnd >>
-            Win32.sendMessage hwnd Win32.wM_QUIT 1 0 >>
-                pure 0
+        Internal.activeWindowCountRef >>= \activeWindowCountRef' -> do
+            remainingWindow <- atomicModifyIORef' activeWindowCountRef' $ \n -> (n - 1, n - 1)
+            print remainingWindow
+
+            when (remainingWindow <= 0) $
+                Win32.postQuitMessage 0
+
+            pure 0
+
+    | wmsg == Win32.wM_NCDESTROY =
+        cleanupGDIs hwnd >>
+            pure 0
 
     | otherwise =
         Win32.defWindowProcSafe (Just hwnd) wmsg wParam lParam
 
-cleanupResources :: Win32.HWND -> IO ()
-cleanupResources hwnd = do
-    let callback _ _ hData _ = do
-            Win32.c_DeleteObject hData >>
+cleanupGDIs :: Win32.HWND -> IO ()
+cleanupGDIs hwnd = do
+    let callback _ _ hData _ =
+            void (Win32.c_DeleteObject hData) >>
                 pure True
 
     callbackPtr <- Win32.makePropEnumProcEx callback

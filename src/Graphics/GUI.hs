@@ -9,18 +9,21 @@ module Graphics.GUI
     , toWin32Brush
     ) where
 
+import           Data.Bits            ((.|.))
 import qualified Graphics.GUI.Foreign as Win32
 import qualified Graphics.Win32       as Win32
 
-data WindowStyle = Popup
-                 | Overlapped
-                 | Child
+data WindowStyle = Borderless
+                 | Normal
+                 | BorderlessChild
+                 | NormalChild
                  deriving Eq
 
 toWin32WindowStyle :: WindowStyle -> Win32.WindowStyle
-toWin32WindowStyle Popup      = Win32.wS_POPUP
-toWin32WindowStyle Overlapped = Win32.wS_OVERLAPPEDWINDOW
-toWin32WindowStyle Child      = Win32.wS_CHILD
+toWin32WindowStyle Borderless      = Win32.wS_POPUP
+toWin32WindowStyle Normal          = Win32.wS_OVERLAPPEDWINDOW
+toWin32WindowStyle BorderlessChild = Win32.wS_POPUP .|. Win32.wS_CHILD
+toWin32WindowStyle NormalChild     = Win32.wS_OVERLAPPEDWINDOW .|. Win32.wS_CHILD
 
 data Icon = Application
           | Hand

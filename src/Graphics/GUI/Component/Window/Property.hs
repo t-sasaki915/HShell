@@ -108,8 +108,5 @@ instance IsWindowProperty WindowBrush where
 
 instance IsWindowProperty WindowChildren where
     applyProperty (WindowChildren children) windowHWND =
-        forM_ children $ \(GUIComponent child) -> do
-            childHWND <- render child (Just windowHWND)
-
-            withRandomTString $ \pName ->
-                void $ Win32.c_SetProp windowHWND pName childHWND
+        forM_ children $ \(GUIComponent child) ->
+            render child (Just windowHWND)
