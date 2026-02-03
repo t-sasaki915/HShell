@@ -38,7 +38,7 @@ main = do
     displayHeight <- getSystemMetrics sM_CYSCREEN
 
     let mainWindow =
-            window "HShell-Main" [Overlapped] $ do
+            window "HShell-Main" [Popup] $ do
                 windowTitle "HShell"
                 windowIcon Question
                 windowCursor IBeam
@@ -46,6 +46,11 @@ main = do
                 windowPosition (0, 0)
                 windowBrush (SolidBrush 255 255 255)
                 windowChildren $ do
+                    button $ do
+                        buttonLabel "TEST BUTTON"
+                        buttonSize (100, 50)
+                        buttonPosition (0, 0)
+
                     window "HShell-Sub" [Overlapped, Child] $ do
                         windowTitle "HELLO"
                         windowIcon Asterisk
@@ -54,6 +59,11 @@ main = do
                         windowPosition (100, 100)
                         windowBrush (SolidBrush 255 0 0)
                         windowChildren $ do
+                            button $ do
+                                buttonLabel "TEST BUTTON 2"
+                                buttonSize (50, 100)
+                                buttonPosition (20, 50)
+
                             window "HShell-Sub-Sub" [Overlapped, Child] $ do
                                 windowTitle "GOOD MORNING"
                                 windowIcon Application

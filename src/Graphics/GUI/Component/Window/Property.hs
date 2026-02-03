@@ -39,6 +39,8 @@ class Eq a => IsWindowProperty a where
 instance IsWindowProperty WindowProperty where
     applyProperty (WindowProperty a) = applyProperty a
 
+instance IsGUIComponentProperty WindowProperty
+
 newtype WindowTitle    = WindowTitle    Text           deriving Eq
 newtype WindowIcon     = WindowIcon     Icon           deriving Eq
 newtype WindowCursor   = WindowCursor   Cursor         deriving Eq

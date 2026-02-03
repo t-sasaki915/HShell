@@ -11,7 +11,12 @@ module Graphics.GUI.DSL
     , windowBrush
     , windowChildren
     , window
+    , buttonLabel
+    , buttonSize
+    , buttonPosition
+    , button
     ) where
 
 import           Graphics.GUI
+import           Graphics.GUI.Component.Button.DSL
 import           Graphics.GUI.Component.Window.DSL

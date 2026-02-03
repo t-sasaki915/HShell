@@ -20,8 +20,11 @@ source-repository head
 
 library
   exposed-modules:
+      Graphics.GUI.Component.Button.DSL
+      Graphics.GUI.Component.Button.Property
       Graphics.GUI.Component.Window.DSL
       Graphics.GUI.Component.Window.Property
+      Graphics.GUI.Component.Button
       Graphics.GUI.Component.Property
       Graphics.GUI.Component.Window
       Graphics.GUI.Component
