@@ -8,19 +8,29 @@ module Framework.TEA
 import           Control.Exception      (SomeException, try)
 import           Control.Monad          (forM_, void, when)
 import           Control.Monad.Writer   (runWriter)
+import           Data.Data              (Typeable, cast)
+import           Data.Functor           ((<&>))
 import           Data.IORef             (atomicModifyIORef')
 import           Framework.TEA.Internal
 import           Graphics.GUI.Component (GUIComponents, IsGUIComponent (render))
 import qualified Graphics.Win32         as Win32
 import           Prelude                hiding (init)
 
-runTEA :: (IsModel model, IsMsg msg) => IO model -> (msg -> model -> IO model) -> (model -> GUIComponents) -> IO ()
-runTEA init _ view = do
+runTEA :: (Typeable model, Typeable msg, IsModel model) => IO model -> (msg -> model -> IO model) -> (model -> GUIComponents) -> IO ()
+runTEA init update view = do
     initModel <- init
 
     _ <- atomicModifyIORef' modelRef (const (Model initModel, Model initModel))
 
-    -- TODO
+    let
+        update' (Msg msg) (Model model) =
+            case (cast msg, cast model) of
+                (Just msg', Just model') -> update msg' model' <&> Model
+                _                        -> error "Failed to cast Msg and Model."
+
+        update' _ NoModel = error "TEA is not initialised."
+
+    _ <- atomicModifyIORef' updateFuncRef (const (update', update'))
 
     let initGUIComponents = fmap snd runWriter (view initModel)
 

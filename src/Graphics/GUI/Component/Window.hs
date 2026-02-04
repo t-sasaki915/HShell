@@ -1,10 +1,14 @@
 module Graphics.GUI.Component.Window (Window (..)) where
 
 import           Control.Monad                          (void, when)
-import           Data.IORef                             (atomicModifyIORef')
+import           Data.IORef                             (atomicModifyIORef',
+                                                         readIORef)
+import qualified Data.Map                               as Map
 import           Data.Text                              (Text)
 import qualified Data.Text                              as Text
-import           Foreign                                (freeHaskellFunPtr)
+import           Foreign                                (freeHaskellFunPtr,
+                                                         intPtrToPtr)
+import qualified Framework.TEA.Internal                 as TEAInternal
 import           Graphics.GUI                           (WindowStyle,
                                                          toWin32WindowStyle)
 import           Graphics.GUI.Component                 (IsGUIComponent (..))
@@ -56,8 +60,8 @@ instance IsGUIComponent Window where
         pure window
 
 typicalWindowProc :: Win32.LPPAINTSTRUCT -> Win32.WindowMessage -> Win32.WPARAM -> Win32.LPARAM -> IO Win32.LRESULT
-typicalWindowProc hwnd wmsg wParam lParam
-    | wmsg == Win32.wM_DESTROY = do
+typicalWindowProc hwnd wMsg wParam lParam
+    | wMsg == Win32.wM_DESTROY = do
         remainingWindow <- atomicModifyIORef' Internal.activeWindowCountRef $ \n -> (n - 1, n - 1)
 
         when (remainingWindow <= 0) $
@@ -65,12 +69,27 @@ typicalWindowProc hwnd wmsg wParam lParam
 
         pure 0
 
-    | wmsg == Win32.wM_NCDESTROY =
+    | wMsg == Win32.wM_COMMAND = do
+        let notification = Win32.hIWORD (fromIntegral wParam)
+            targetHWND = intPtrToPtr (fromIntegral lParam) :: Win32.HWND
+
+        case notification of
+            0 -> do -- BN_CLICKED
+                buttonClickEventHandlers <- readIORef TEAInternal.buttonClickEventHandlersRef
+
+                case Map.lookup targetHWND buttonClickEventHandlers of
+                    Just action -> TEAInternal.performUpdate action >> pure 0
+                    Nothing     -> Win32.defWindowProc (Just hwnd) wMsg wParam lParam
+
+            _ ->
+                Win32.defWindowProc (Just hwnd) wMsg wParam lParam
+
+    | wMsg == Win32.wM_NCDESTROY =
         cleanupGDIs hwnd >>
             pure 0
 
     | otherwise =
-        Win32.defWindowProcSafe (Just hwnd) wmsg wParam lParam
+        Win32.defWindowProcSafe (Just hwnd) wMsg wParam lParam
 
 cleanupGDIs :: Win32.HWND -> IO ()
 cleanupGDIs hwnd = do

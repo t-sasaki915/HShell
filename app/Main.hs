@@ -22,7 +22,7 @@ data Model = Model
 
 instance IsModel Model
 
-data Msg = ButtonClicked deriving (Eq, Show)
+data Msg = ButtonClicked deriving Eq
 
 instance IsMsg Msg
 
