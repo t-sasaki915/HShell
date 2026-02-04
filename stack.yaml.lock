@@ -3,7 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/topics/lock_files
 
-packages: []
+packages:
+- completed:
+    commit: 1fcaef2227702562c3b3fbf385ac53a8a9917dd4
+    git: https://github.com/t-sasaki915/TEAWin32GUI
+    name: TEAWin32GUI
+    pantry-tree:
+      sha256: a4e7844246b95be588eb580643b1a4f70873a9f15e416c5f4b9193ff73b0e514
+      size: 1547
+    version: 0.1.0.0
+  original:
+    commit: 1fcaef2227702562c3b3fbf385ac53a8a9917dd4
+    git: https://github.com/t-sasaki915/TEAWin32GUI
 snapshots:
 - completed:
     sha256: e9b93acfb8aaf8ae4869050506553a963a8adba95748cd60356f9ffe64f03345

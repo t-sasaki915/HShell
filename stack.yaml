@@ -3,3 +3,7 @@ compiler: ghc-9.12.2
 
 packages:
 - .
+
+extra-deps:
+- git: https://github.com/t-sasaki915/TEAWin32GUI
+  commit: 1fcaef2227702562c3b3fbf385ac53a8a9917dd4

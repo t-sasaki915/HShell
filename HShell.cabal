@@ -18,38 +18,6 @@ source-repository head
   type: git
   location: https://github.com/t-sasaki915/HShell
 
-library
-  exposed-modules:
-      Framework.TEA.Internal
-      Framework.TEA
-      Graphics.GUI.Component.Button.DSL
-      Graphics.GUI.Component.Button.Property
-      Graphics.GUI.Component.Window.DSL
-      Graphics.GUI.Component.Window.Property
-      Graphics.GUI.Component.Button
-      Graphics.GUI.Component.Property
-      Graphics.GUI.Component.Window
-      Graphics.GUI.Component
-      Graphics.GUI.DSL
-      Graphics.GUI.Foreign
-      Graphics.GUI.Internal
-      Graphics.GUI
-  other-modules:
-      Paths_HShell
-  autogen-modules:
-      Paths_HShell
-  hs-source-dirs:
-      src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
-  build-depends:
-      base >=4.7 && <5
-    , Win32 >=2.14 && <2.15
-    , mtl >= 2.3 && <2.4
-    , text >=2.1 && <2.2
-    , containers >=0.7 && <0.8
-  default-language: Haskell2010
-  default-extensions: LambdaCase, OverloadedStrings, QuasiQuotes
-
 executable HShell
   main-is: Main.hs
   other-modules:
@@ -61,12 +29,12 @@ executable HShell
   ld-options: resources.o
   ghc-options: -fno-gen-manifest -optl-mwindows -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      HShell
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , Win32 >=2.14 && <2.15
     , text >=2.1 && <2.2
     , typed-process >=0.2 && <0.3
     , lens >=5.3 && <5.4
+    , TEAWin32GUI >=0.1 && <0.2
   default-language: Haskell2010
   default-extensions: OverloadedStrings, LambdaCase, QuasiQuotes
 
