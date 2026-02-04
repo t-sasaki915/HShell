@@ -22,7 +22,7 @@ data WindowStyle = Borderless
 toWin32WindowStyle :: WindowStyle -> Win32.WindowStyle
 toWin32WindowStyle Borderless      = Win32.wS_POPUP
 toWin32WindowStyle Normal          = Win32.wS_OVERLAPPEDWINDOW
-toWin32WindowStyle BorderlessChild = Win32.wS_POPUP .|. Win32.wS_CHILD
+toWin32WindowStyle BorderlessChild = Win32.wS_CHILD
 toWin32WindowStyle NormalChild     = Win32.wS_OVERLAPPEDWINDOW .|. Win32.wS_CHILD
 
 data Icon = Application
