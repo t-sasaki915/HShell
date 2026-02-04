@@ -91,6 +91,8 @@ typicalWindowProc hwnd wMsg wParam lParam
     | otherwise =
         Win32.defWindowProcSafe (Just hwnd) wMsg wParam lParam
 
+-- TODO: cleanupEventHandlers
+
 cleanupGDIs :: Win32.HWND -> IO ()
 cleanupGDIs hwnd = do
     let callback _ _ hData _ =

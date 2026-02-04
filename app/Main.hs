@@ -1,9 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Main (main) where
 
 import           Control.Exception          (SomeException, try)
+import           Control.Lens               (makeLenses, over, (^.))
 import           Data.Bits                  ((.|.))
+import           Data.Text                  (append)
+import qualified Data.Text                  as Text
 import           Framework.TEA              (GUIComponents, IsModel, IsMsg,
                                              runTEA)
 import           Graphics.GUI.DSL
@@ -16,28 +20,17 @@ import           System.Win32               (sM_CXSCREEN, sM_CYSCREEN)
 import           System.Win32.Info.Computer (getSystemMetrics)
 
 data Model = Model
-    { displayWidth  :: Int
-    , displayHeight :: Int
-    }
+    { _displayWidth  :: Int
+    , _displayHeight :: Int
+    , _clickedCount  :: Int
+    } deriving Show
 
-instance IsModel Model
+makeLenses ''Model
 
 data Msg = ButtonClicked deriving Eq
 
+instance IsModel Model
 instance IsMsg Msg
-
-wpeInit :: IO ()
-wpeInit = do
-    try (runProcess (proc "X:\\Windows\\System32\\wpeinit.exe" [])) >>= \case
-        Right ExitSuccess           -> pure ()
-        Right x                     -> showMessageBox ("ExitCode: " ++ show x)
-        Left (err :: SomeException) -> showMessageBox (show err)
-
-    where
-        showMessageBox detail =
-            messageBox Nothing ("Failed to initialise Windows PE. Continue?\n" ++ detail) "HShell" (mB_ICONSTOP .|. mB_YESNO) >>= \case
-                6 -> pure ()
-                _ -> exitFailure
 
 init :: IO Model
 init = do
@@ -45,12 +38,15 @@ init = do
     displayHeight' <- getSystemMetrics sM_CYSCREEN
 
     pure $ Model
-        { displayWidth  = displayWidth'
-        , displayHeight = displayHeight'
+        { _displayWidth  = displayWidth'
+        , _displayHeight = displayHeight'
+        , _clickedCount  = 0
         }
 
 update :: Msg -> Model -> IO Model
-update ButtonClicked model = putStrLn "CLICKED!!!!!!!!!!!!!" >> pure model
+update ButtonClicked model =
+    print model >>
+        pure (over clickedCount (+1) model)
 
 view :: Model -> GUIComponents
 view model =
@@ -58,7 +54,7 @@ view model =
         windowTitle "HShell"
         windowIcon (FromResource 101)
         windowCursor IBeam
-        windowSize (displayWidth model, displayHeight model)
+        windowSize (model ^. displayWidth, model ^. displayHeight)
         windowPosition (0, 0)
         windowBrush (SolidBrush 255 255 255)
         windowChildren $ do
@@ -72,12 +68,12 @@ view model =
                 windowTitle "HELLO"
                 windowIcon Exclamation
                 windowCursor Arrow
-                windowSize (displayWidth model `div` 2, displayHeight model `div` 2)
+                windowSize (model ^. displayWidth `div` 2, model ^. displayHeight `div` 2)
                 windowPosition (100, 100)
                 windowBrush (SolidBrush 255 0 0)
                 windowChildren $ do
                     button $ do
-                        buttonLabel "TEST BUTTON 2"
+                        buttonLabel ("Clicked: " `append` Text.show (model ^. clickedCount))
                         buttonSize (100, 100)
                         buttonPosition (20, 50)
 
@@ -88,6 +84,19 @@ view model =
                         windowSize (50, 50)
                         windowPosition (0, 0)
                         windowBrush (SolidBrush 0 255 0)
+
+wpeInit :: IO ()
+wpeInit = do
+    try (runProcess (proc "X:\\Windows\\System32\\wpeinit.exe" [])) >>= \case
+        Right ExitSuccess           -> pure ()
+        Right x                     -> showMessageBox ("ExitCode: " ++ show x)
+        Left (err :: SomeException) -> showMessageBox (show err)
+
+    where
+        showMessageBox detail =
+            messageBox Nothing ("Failed to initialise Windows PE. Continue?\n" ++ detail) "HShell" (mB_ICONSTOP .|. mB_YESNO) >>= \case
+                6 -> pure ()
+                _ -> exitFailure
 
 main :: IO ()
 main =
