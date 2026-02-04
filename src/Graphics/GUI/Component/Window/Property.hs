@@ -64,7 +64,7 @@ instance IsWindowProperty WindowTitle where
 
 instance IsWindowProperty WindowIcon where
     applyProperty (WindowIcon icon) windowHWND =
-        Win32.loadIcon Nothing (toWin32Icon icon) >>= \icon' ->
+        toWin32Icon icon >>= \icon' ->
             void $ Win32.c_SetClassLongPtr windowHWND Win32.gCLP_HICON icon'
 
 instance IsWindowProperty WindowCursor where

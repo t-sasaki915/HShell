@@ -40,7 +40,7 @@ main = do
     let mainWindow =
             window "HShell-Main" Normal $ do
                 windowTitle "HShell"
-                windowIcon Question
+                windowIcon (FromResource 101)
                 windowCursor IBeam
                 windowSize (displayWidth, displayHeight)
                 windowPosition (0, 0)
@@ -53,7 +53,7 @@ main = do
 
                     window "HShell-Sub" NormalChild $ do
                         windowTitle "HELLO"
-                        windowIcon (FromResource 102)
+                        windowIcon Exclamation
                         windowCursor Arrow
                         windowSize (displayWidth `div` 2, displayHeight `div` 2)
                         windowPosition (100, 100)

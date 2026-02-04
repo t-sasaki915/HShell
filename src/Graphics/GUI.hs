@@ -12,6 +12,7 @@ module Graphics.GUI
 import           Data.Bits            ((.|.))
 import qualified Graphics.GUI.Foreign as Win32
 import qualified Graphics.Win32       as Win32
+import qualified System.Win32         as Win32
 
 data WindowStyle = Borderless
                  | Normal
@@ -33,13 +34,15 @@ data Icon = Application
           | FromResource Int
           deriving Eq
 
-toWin32Icon :: Icon -> Win32.Icon
-toWin32Icon Application      = Win32.iDI_APPLICATION
-toWin32Icon Hand             = Win32.iDI_HAND
-toWin32Icon Question         = Win32.iDI_QUESTION
-toWin32Icon Exclamation      = Win32.iDI_EXCLAMATION
-toWin32Icon Asterisk         = Win32.iDI_ASTERISK
-toWin32Icon (FromResource x) = Win32.makeIntResource x
+toWin32Icon :: Icon -> IO Win32.HICON
+toWin32Icon Application      = Win32.loadIcon Nothing Win32.iDI_APPLICATION
+toWin32Icon Hand             = Win32.loadIcon Nothing Win32.iDI_HAND
+toWin32Icon Question         = Win32.loadIcon Nothing Win32.iDI_QUESTION
+toWin32Icon Exclamation      = Win32.loadIcon Nothing Win32.iDI_EXCLAMATION
+toWin32Icon Asterisk         = Win32.loadIcon Nothing Win32.iDI_ASTERISK
+toWin32Icon (FromResource x) =
+    Win32.getModuleHandle Nothing >>= \hInstance ->
+        Win32.loadIcon (Just hInstance) (Win32.makeIntResource x)
 
 data Cursor = Arrow
             | IBeam
