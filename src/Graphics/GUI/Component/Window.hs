@@ -71,7 +71,7 @@ typicalWindowProc hwnd wMsg wParam lParam
 
     | wMsg == Win32.wM_COMMAND = do
         let notification = Win32.hIWORD (fromIntegral wParam)
-            targetHWND = intPtrToPtr (fromIntegral lParam) :: Win32.HWND
+            targetHWND = intPtrToPtr (fromIntegral lParam)
 
         case notification of
             0 -> do -- BN_CLICKED
