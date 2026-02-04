@@ -98,7 +98,7 @@ instance IsWindowProperty WindowPosition where
 instance IsWindowProperty WindowBrush where
     applyProperty (WindowBrush brush) windowHWND = do
         Win32.c_GetClassLongPtr windowHWND Win32.gCLP_HBRBACKGROUND >>= \oldBrush ->
-            void $ Win32.c_DeleteBrush (intPtrToPtr $ fromIntegral oldBrush)
+            void $ Win32.c_DeleteObject (intPtrToPtr $ fromIntegral oldBrush)
 
         toWin32Brush brush >>= \brush' -> do
             void $ Win32.c_SetClassLongPtr windowHWND Win32.gCLP_HBRBACKGROUND brush'
