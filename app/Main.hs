@@ -4,7 +4,8 @@ module Main (main) where
 
 import           Control.Exception          (SomeException, try)
 import           Data.Bits                  ((.|.))
-import           Framework.TEA              (GUIComponents, runTEA)
+import           Framework.TEA              (GUIComponents, IsModel, IsMsg,
+                                             runTEA)
 import           Graphics.GUI.DSL
 import           Graphics.Win32             (mB_ICONSTOP, mB_YESNO, messageBox)
 import           Prelude                    hiding (init)
@@ -19,7 +20,11 @@ data Model = Model
     , displayHeight :: Int
     }
 
-data Msg
+instance IsModel Model
+
+data Msg = ButtonClicked deriving (Eq, Show)
+
+instance IsMsg Msg
 
 wpeInit :: IO ()
 wpeInit = do
@@ -45,7 +50,7 @@ init = do
         }
 
 update :: Msg -> Model -> IO Model
-update _ = pure
+update ButtonClicked model = putStrLn "CLICKED!!!!!!!!!!!!!" >> pure model
 
 view :: Model -> GUIComponents
 view model =
@@ -61,6 +66,7 @@ view model =
                 buttonLabel "TEST BUTTON"
                 buttonSize (100, 50)
                 buttonPosition (0, 0)
+                buttonClicked ButtonClicked
 
             window "HShell-Sub" NormalChild $ do
                 windowTitle "HELLO"

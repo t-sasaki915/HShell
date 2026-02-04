@@ -14,6 +14,7 @@ module Graphics.GUI.DSL
     , buttonLabel
     , buttonSize
     , buttonPosition
+    , buttonClicked
     , button
     ) where
 

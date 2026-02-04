@@ -23,7 +23,6 @@ import           Graphics.GUI.Component          (GUIComponent (..),
                                                   IsGUIComponent (render))
 import           Graphics.GUI.Component.Property (IsGUIComponentProperty)
 import qualified Graphics.GUI.Foreign            as Win32
-import           Graphics.GUI.Internal           (withRandomTString)
 import qualified Graphics.Win32                  as Win32
 
 data WindowProperty = forall a. (Typeable a, Eq a, IsWindowProperty a) => WindowProperty a
@@ -103,7 +102,7 @@ instance IsWindowProperty WindowBrush where
         toWin32Brush brush >>= \brush' -> do
             void $ Win32.c_SetClassLongPtr windowHWND Win32.gCLP_HBRBACKGROUND brush'
 
-            withRandomTString $ \pName ->
+            Win32.withTString "WINDOW_BRUSH" $ \pName ->
                 void $ Win32.c_SetProp windowHWND pName brush'
 
 instance IsWindowProperty WindowChildren where

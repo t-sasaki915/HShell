@@ -1,21 +1,24 @@
 module Framework.TEA
     ( GUIComponents
+    , IsModel
+    , IsMsg
     , runTEA
     ) where
 
 import           Control.Exception      (SomeException, try)
 import           Control.Monad          (forM_, void, when)
 import           Control.Monad.Writer   (runWriter)
-import           Data.IORef             (newIORef)
+import           Data.IORef             (atomicModifyIORef')
+import           Framework.TEA.Internal
 import           Graphics.GUI.Component (GUIComponents, IsGUIComponent (render))
 import qualified Graphics.Win32         as Win32
 import           Prelude                hiding (init)
 
-runTEA :: IO model -> (msg -> model -> IO model) -> (model -> GUIComponents) -> IO ()
+runTEA :: (IsModel model, IsMsg msg) => IO model -> (msg -> model -> IO model) -> (model -> GUIComponents) -> IO ()
 runTEA init _ view = do
     initModel <- init
 
-    _ <- newIORef initModel
+    _ <- atomicModifyIORef' modelRef (const (Model initModel, Model initModel))
 
     -- TODO
 
