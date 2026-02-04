@@ -20,6 +20,7 @@ source-repository head
 
 library
   exposed-modules:
+      Framework.TEA
       Graphics.GUI.Component.Button.DSL
       Graphics.GUI.Component.Button.Property
       Graphics.GUI.Component.Window.DSL

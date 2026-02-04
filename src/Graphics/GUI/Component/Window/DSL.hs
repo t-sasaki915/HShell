@@ -14,7 +14,8 @@ import           Control.Monad.Writer                   (MonadWriter (tell),
 import           Data.Text                              (Text)
 import           Graphics.GUI                           (Brush, Cursor, Icon,
                                                          WindowStyle)
-import           Graphics.GUI.Component                 (GUIComponent (GUIComponent))
+import           Graphics.GUI.Component                 (GUIComponent (GUIComponent),
+                                                         GUIComponents)
 import           Graphics.GUI.Component.Window          (Window (Window))
 import           Graphics.GUI.Component.Window.Property
 
@@ -40,7 +41,7 @@ windowChildren :: Writer [GUIComponent] () -> Writer [WindowProperty] ()
 windowChildren children =
     tell $ pure $ WindowProperty $ WindowChildren (snd $ runWriter children)
 
-window :: Text -> WindowStyle -> Writer [WindowProperty] () -> Writer [GUIComponent] ()
+window :: Text -> WindowStyle -> Writer [WindowProperty] () -> GUIComponents
 window windowClass windowStyle windowProperties =
     tell $ pure $ GUIComponent $
         Window windowClass windowStyle (snd $ runWriter windowProperties)

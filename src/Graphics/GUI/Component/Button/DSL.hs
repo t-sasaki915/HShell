@@ -7,7 +7,8 @@ module Graphics.GUI.Component.Button.DSL
 import           Control.Monad.Writer                   (MonadWriter (tell),
                                                          Writer, runWriter)
 import           Data.Text                              (Text)
-import           Graphics.GUI.Component                 (GUIComponent (..))
+import           Graphics.GUI.Component                 (GUIComponent (..),
+                                                         GUIComponents)
 import           Graphics.GUI.Component.Button          (Button (Button))
 import           Graphics.GUI.Component.Button.Property
 
@@ -20,5 +21,5 @@ buttonSize = tell . pure . ButtonProperty . ButtonSize
 buttonPosition :: (Int, Int) -> Writer [ButtonProperty] ()
 buttonPosition = tell . pure . ButtonProperty . ButtonPosition
 
-button :: Writer [ButtonProperty] () -> Writer [GUIComponent] ()
+button :: Writer [ButtonProperty] () -> GUIComponents
 button = tell . pure . GUIComponent . Button . snd . runWriter

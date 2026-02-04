@@ -1,12 +1,16 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Graphics.GUI.Component
-    ( IsGUIComponent (..)
+    ( GUIComponents
+    , IsGUIComponent (..)
     , GUIComponent (..)
     ) where
 
-import           Data.Data      (Typeable, cast)
-import qualified Graphics.Win32 as Win32
+import           Control.Monad.Writer (Writer)
+import           Data.Data            (Typeable, cast)
+import qualified Graphics.Win32       as Win32
+
+type GUIComponents = Writer [GUIComponent] ()
 
 class Eq a => IsGUIComponent a where
     render :: a -> Maybe Win32.HWND -> IO Win32.HWND
