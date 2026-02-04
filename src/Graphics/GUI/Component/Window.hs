@@ -51,22 +51,19 @@ instance IsGUIComponent Window where
         _ <- Win32.showWindow window Win32.sW_SHOWNORMAL
         Win32.updateWindow window
 
-        Internal.activeWindowCountRef >>= \activeWindowCountRef' ->
-            void $ atomicModifyIORef' activeWindowCountRef' $ \n -> (n + 1, n + 1)
+        void $ atomicModifyIORef' Internal.activeWindowCountRef $ \n -> (n + 1, n + 1)
 
         pure window
 
 typicalWindowProc :: Win32.LPPAINTSTRUCT -> Win32.WindowMessage -> Win32.WPARAM -> Win32.LPARAM -> IO Win32.LRESULT
 typicalWindowProc hwnd wmsg wParam lParam
-    | wmsg == Win32.wM_DESTROY =
-        Internal.activeWindowCountRef >>= \activeWindowCountRef' -> do
-            remainingWindow <- atomicModifyIORef' activeWindowCountRef' $ \n -> (n - 1, n - 1)
-            print remainingWindow
+    | wmsg == Win32.wM_DESTROY = do
+        remainingWindow <- atomicModifyIORef' Internal.activeWindowCountRef $ \n -> (n - 1, n - 1)
 
-            when (remainingWindow <= 0) $
-                Win32.postQuitMessage 0
+        when (remainingWindow <= 0) $
+            Win32.postQuitMessage 0
 
-            pure 0
+        pure 0
 
     | wmsg == Win32.wM_NCDESTROY =
         cleanupGDIs hwnd >>
