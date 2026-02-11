@@ -8,8 +8,7 @@ import           Control.Lens               (makeLenses, over, (^.))
 import           Data.Bits                  ((.|.))
 import           Data.Text                  (append)
 import qualified Data.Text                  as Text
-import           Framework.TEA              (GUIComponents, IsModel, IsMsg,
-                                             runTEA)
+import           Framework.TEA              (GUIComponents, runTEA)
 import           Graphics.GUI.DSL
 import           Graphics.Win32             (mB_ICONSTOP, mB_YESNO, messageBox)
 import           Prelude                    hiding (init)
@@ -27,10 +26,7 @@ data Model = Model
 
 makeLenses ''Model
 
-data Msg = ButtonClicked deriving Eq
-
-instance IsModel Model
-instance IsMsg Msg
+data Msg = ButtonClicked deriving (Show, Eq)
 
 init :: IO Model
 init = do
@@ -50,7 +46,7 @@ update ButtonClicked model =
 
 view :: Model -> GUIComponents
 view model =
-    window "HShell-Main" Normal $ do
+    window "HShell-Main" "HShell-Main" Normal $ do
         windowTitle "HShell"
         windowIcon (FromResource 101)
         windowCursor IBeam
@@ -58,13 +54,13 @@ view model =
         windowPosition (0, 0)
         windowBrush (SolidBrush 255 255 255)
         windowChildren $ do
-            button $ do
+            button "TestButton" $ do
                 buttonLabel "TEST BUTTON"
                 buttonSize (100, 50)
                 buttonPosition (0, 0)
                 buttonClicked ButtonClicked
 
-            window "HShell-Sub" NormalChild $ do
+            window "HShell-Sub" "HShell-Sub" NormalChild $ do
                 windowTitle "HELLO"
                 windowIcon Exclamation
                 windowCursor Arrow
@@ -72,12 +68,12 @@ view model =
                 windowPosition (100, 100)
                 windowBrush (SolidBrush 255 0 0)
                 windowChildren $ do
-                    button $ do
+                    button "TestButton2" $ do
                         buttonLabel ("Clicked: " `append` Text.show (model ^. clickedCount))
                         buttonSize (100, 100)
                         buttonPosition (20, 50)
 
-                    window "HShell-Sub-Sub" BorderlessChild $ do
+                    window "HShell-Sub-Sub" "HShell-Sub-Sub" BorderlessChild $ do
                         windowTitle "GOOD MORNING"
                         windowIcon Application
                         windowCursor Wait
