@@ -27,7 +27,7 @@ executable HShell
   hs-source-dirs:
       app
   ld-options: resources.o
-  ghc-options: -fno-gen-manifest -optl-mwindows -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -optl-mwindows -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , Win32 >=2.14 && <2.15

@@ -8,7 +8,7 @@ import           Control.Lens               (makeLenses, over, (^.))
 import           Data.Bits                  ((.|.))
 import           Data.Text                  (append)
 import qualified Data.Text                  as Text
-import           Framework.TEA              (GUIComponents, runTEA)
+import           Framework.TEA              (defaultSettings, runTEA)
 import           Graphics.GUI.DSL
 import           Graphics.Win32             (mB_ICONSTOP, mB_YESNO, messageBox)
 import           Prelude                    hiding (init)
@@ -46,40 +46,28 @@ update ButtonClicked model =
 
 view :: Model -> GUIComponents
 view model =
-    window "HShell-Main" "HShell-Main" Normal $ do
-        windowTitle "HShell"
-        windowIcon (FromResource 101)
-        windowCursor IBeam
-        windowSize (model ^. displayWidth, model ^. displayHeight)
-        windowPosition (0, 0)
-        windowBrush (SolidBrush 255 255 255)
-        windowChildren $ do
-            button "TestButton" $ do
-                buttonLabel "TEST BUTTON"
-                buttonSize (100, 50)
-                buttonPosition (0, 0)
-                buttonClicked ButtonClicked
+    window_ "HShell-Main" "HShell-Main" Normal
+        [ title_ "HShell"
+        , icon_ (FromResource 101)
+        , cursor_ IBeam
+        , size_ (model ^. displayWidth, model ^. displayHeight)
+        , position_ (0, 0)
+        , backgroundColour_ (RGB 255 255 255)
+        ] $ do
+            button_ "TestButton" [title_ "TEST BUTTON", size_ (100, 50), position_ (0, 0), onClick_ ButtonClicked]
 
-            window "HShell-Sub" "HShell-Sub" NormalChild $ do
-                windowTitle "HELLO"
-                windowIcon Exclamation
-                windowCursor Arrow
-                windowSize (model ^. displayWidth `div` 2, model ^. displayHeight `div` 2)
-                windowPosition (100, 100)
-                windowBrush (SolidBrush 255 0 0)
-                windowChildren $ do
-                    button "TestButton2" $ do
-                        buttonLabel ("Clicked: " `append` Text.show (model ^. clickedCount))
-                        buttonSize (100, 100)
-                        buttonPosition (20, 50)
+            window_ "HShell-Sub" "HShell-Sub" NormalChild
+                [ title_ "HELLO"
+                , icon_ Exclamation
+                , cursor_ Arrow
+                , size_ (model ^. displayWidth `div` 2, model ^. displayHeight `div` 2)
+                , position_ (100, 100)
+                , backgroundColour_ (RGB 255 0 0)
+                ] $ do
+                    button_ "TestButton2" [title_ ("Clicked: " `append` Text.show (model ^. clickedCount)), size_ (100, 100), position_ (20, 50)]
 
-                    window "HShell-Sub-Sub" "HShell-Sub-Sub" BorderlessChild $ do
-                        windowTitle "GOOD MORNING"
-                        windowIcon Application
-                        windowCursor Wait
-                        windowSize (50, 50)
-                        windowPosition (0, 0)
-                        windowBrush (SolidBrush 0 255 0)
+                    window_ "HShell-Sub-Sub" "HShell-Sub-Sub" BorderlessChild
+                        [title_ "GOOD MORNING", icon_ Application, cursor_ Wait, size_ (50, 50), position_ (0, 0), backgroundColour_ (RGB 0 255 0)] noChildren
 
 wpeInit :: IO ()
 wpeInit = do
@@ -97,4 +85,4 @@ wpeInit = do
 main :: IO ()
 main =
     wpeInit >>
-        runTEA init update view
+        runTEA defaultSettings init update view
