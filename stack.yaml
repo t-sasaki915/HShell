@@ -5,5 +5,5 @@ packages:
 - .
 
 extra-deps:
-- git: https://github.com/t-sasaki915/TEAWin32GUI
-  commit: 09396652bab62e81bafa1b68f79410f10f70fc05
+- git: https://github.com/t-sasaki915/TEAWin32
+  commit: c13d63fd03b5b85c91c98efa878b280af69205f9

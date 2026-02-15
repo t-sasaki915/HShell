@@ -5,18 +5,18 @@ module Main (main) where
 
 import           Control.Exception          (SomeException, try)
 import           Control.Lens               (makeLenses, over, (^.))
-import           Data.Bits                  ((.|.))
 import           Data.Text                  (append)
 import qualified Data.Text                  as Text
-import           Framework.TEA              (defaultSettings, runTEA)
-import           Graphics.GUI.DSL
-import           Graphics.Win32             (mB_ICONSTOP, mB_YESNO, messageBox)
 import           Prelude                    hiding (init)
 import           System.Exit                (exitFailure)
 import           System.Process.Typed       (ExitCode (ExitSuccess), proc,
                                              runProcess)
 import           System.Win32               (sM_CXSCREEN, sM_CYSCREEN)
 import           System.Win32.Info.Computer (getSystemMetrics)
+import           TEAWin32.Application       (defaultSettings, runTEA)
+import           TEAWin32.Effect            (showMessageBox)
+import           TEAWin32.Effect.MessageBox
+import           TEAWin32.GUI.DSL
 
 data Model = Model
     { _displayWidth  :: Int
@@ -73,14 +73,21 @@ wpeInit :: IO ()
 wpeInit = do
     try (runProcess (proc "X:\\Windows\\System32\\wpeinit.exe" [])) >>= \case
         Right ExitSuccess           -> pure ()
-        Right x                     -> showMessageBox ("ExitCode: " ++ show x)
-        Left (err :: SomeException) -> showMessageBox (show err)
+        Right x                     -> showMsgBox ("ExitCode: " <> Text.show x)
+        Left (err :: SomeException) -> showMsgBox (Text.show err)
 
     where
-        showMessageBox detail =
-            messageBox Nothing ("Failed to initialise Windows PE. Continue?\n" ++ detail) "HShell" (mB_ICONSTOP .|. mB_YESNO) >>= \case
-                6 -> pure ()
-                _ -> exitFailure
+        showMsgBox detail = do
+            msgBoxResult <- showMessageBox defaultMessageBoxSettings
+                    { messageBoxTitle   = "HShell"
+                    , messageBoxContent = "Failed to initialise Windows PE. Continue?\n" <> detail
+                    , messageBoxIcon    = MessageBoxIconError
+                    , messageBoxButtons = MessageBoxButtonsYesNo
+                    }
+
+            case msgBoxResult of
+                MessageBoxResultYes -> pure ()
+                _                   -> exitFailure
 
 main :: IO ()
 main =
