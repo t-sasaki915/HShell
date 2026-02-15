@@ -5,15 +5,15 @@
 
 packages:
 - completed:
-    commit: c13d63fd03b5b85c91c98efa878b280af69205f9
+    commit: 5810e7f16b659b0fd02b2f3ab153ccc17cbc8240
     git: https://github.com/t-sasaki915/TEAWin32
     name: TEAWin32
     pantry-tree:
-      sha256: dd42633e0e36fb87fbca7954b638945430b5a1dad85f2a92c1250acf08e20da0
-      size: 3111
+      sha256: c39b1c33051904e10cddde6ac4a8741409425d9421b0767b6b69e12fa5e35649
+      size: 3049
     version: 0.1.0.0
   original:
-    commit: c13d63fd03b5b85c91c98efa878b280af69205f9
+    commit: 5810e7f16b659b0fd02b2f3ab153ccc17cbc8240
     git: https://github.com/t-sasaki915/TEAWin32
 snapshots:
 - completed:

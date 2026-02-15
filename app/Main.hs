@@ -14,7 +14,6 @@ import           System.Process.Typed       (ExitCode (ExitSuccess), proc,
 import           System.Win32               (sM_CXSCREEN, sM_CYSCREEN)
 import           System.Win32.Info.Computer (getSystemMetrics)
 import           TEAWin32.Application       (defaultSettings, runTEA)
-import           TEAWin32.Effect            (showMessageBox)
 import           TEAWin32.Effect.MessageBox
 import           TEAWin32.GUI.DSL
 
