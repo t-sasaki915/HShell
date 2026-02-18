@@ -45,28 +45,28 @@ update ButtonClicked model =
 
 view :: Model -> GUIComponents
 view model =
-    window_ "HShell-Main" "HShell-Main" Normal
+    window_ "HShell-Main" "HShell-Main" WindowStyleNormal
         [ title_ "HShell"
-        , icon_ (FromResource 101)
-        , cursor_ IBeam
+        , icon_ (IconFromResource 101)
+        , cursor_ CursorIBeam
         , size_ (model ^. displayWidth, model ^. displayHeight)
         , position_ (0, 0)
         , backgroundColour_ (RGB 255 255 255)
         ] $ do
             button_ "TestButton" [title_ "TEST BUTTON", size_ (100, 50), position_ (0, 0), onClick_ ButtonClicked]
 
-            window_ "HShell-Sub" "HShell-Sub" NormalChild
+            window_ "HShell-Sub" "HShell-Sub" WindowStyleNormalChild
                 [ title_ "HELLO"
-                , icon_ Exclamation
-                , cursor_ Arrow
+                , icon_ IconExclamation
+                , cursor_ CursorArrow
                 , size_ (model ^. displayWidth `div` 2, model ^. displayHeight `div` 2)
                 , position_ (100, 100)
                 , backgroundColour_ (RGB 255 0 0)
                 ] $ do
                     button_ "TestButton2" [title_ ("Clicked: " `append` Text.show (model ^. clickedCount)), size_ (100, 100), position_ (20, 50)]
 
-                    window_ "HShell-Sub-Sub" "HShell-Sub-Sub" BorderlessChild
-                        [title_ "GOOD MORNING", icon_ Application, cursor_ Wait, size_ (50, 50), position_ (0, 0), backgroundColour_ (RGB 0 255 0)] noChildren
+                    window_ "HShell-Sub-Sub" "HShell-Sub-Sub" WindowStyleBorderlessChild
+                        [title_ "GOOD MORNING", icon_ IconApplication, cursor_ CursorWait, size_ (50, 50), position_ (0, 0), backgroundColour_ (RGB 0 255 0)] noChildren
 
 wpeInit :: IO ()
 wpeInit = do
