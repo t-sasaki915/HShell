@@ -49,7 +49,7 @@ view model =
         [ title_ "HShell"
         , icon_ (IconFromResource 101)
         , cursor_ CursorIBeam
-        , size_ (model ^. displayWidth, model ^. displayHeight)
+        , size_ (fromIntegral (model ^. displayWidth), fromIntegral (model ^. displayHeight))
         , position_ (0, 0)
         , backgroundColour_ (RGB 255 255 255)
         ] $ do
@@ -59,7 +59,7 @@ view model =
                 [ title_ "HELLO"
                 , icon_ IconExclamation
                 , cursor_ CursorArrow
-                , size_ (model ^. displayWidth `div` 2, model ^. displayHeight `div` 2)
+                , size_ (fromIntegral (model ^. displayWidth `div` 2), fromIntegral (model ^. displayHeight `div` 2))
                 , position_ (100, 100)
                 , backgroundColour_ (RGB 255 0 0)
                 ] $ do
@@ -82,6 +82,7 @@ wpeInit = do
                     , messageBoxContent = "Failed to initialise Windows PE. Continue?\n" <> detail
                     , messageBoxIcon    = MessageBoxIconError
                     , messageBoxButtons = MessageBoxButtonsYesNo
+                    , messageBoxTopMost = True
                     }
 
             case msgBoxResult of
