@@ -6,4 +6,4 @@ packages:
 
 extra-deps:
 - git: https://github.com/t-sasaki915/TEAWin32
-  commit: 78203c5cb8cd0d3f477ddb072580d3c7bf40e49a
+  commit: 9e8a98b645c80f2ad5f28604b202c4fe79bca7d2
